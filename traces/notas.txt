@@ -1,0 +1,8 @@
+CONSTANTE
+
+Thread:  20672
+
+
+EXPONENCIAL:
+
+Thread:  20687

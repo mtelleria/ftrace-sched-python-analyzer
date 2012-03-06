@@ -1,0 +1,237 @@
+\documentclass[a4paper,11pt,spanish,twoside]{article}
+
+\usepackage{mteoptions}
+\usepackage{mtereport}
+\usepackage{wrapfig}
+\usepackage{multicol}
+
+\lstset{basicstyle=\footnotesize}
+
+\begin{document}
+\title{Practica 1:  Monitoreo de CPU y Red con cargas sintéticas}
+
+\author{Miguel Tellería, Jose M. Drake}
+
+\date{8 Marzo 2011}
+
+\maketitle
+\thispagestyle{empty} % no page number in the first page
+
+% -----------------------------------------------------------------------------
+% ABSTRACT
+% -----------------------------------------------------------------------------
+\begin{abstract}
+
+El objetivo de la práctica es familiarizarse con el seguimiento del
+consumo de recursos por parte de aplicaciones, extracción de tasas y
+generación de estadísiticas.
+
+\end{abstract}
+
+\section{Entorno de trabajo}
+\label{sec:workenvironment}
+
+Para esta práctica sugerimos tener los siguientes programas arrancados
+y a mano para ser usados:
+
+\begin{itemize}
+\item Una primera consola de superusuario corriendo \texttt{htop}.
+  Esta herramienta la usaremos para cambiar afinidad y valor nice de
+  cada proceso.
+
+\item Una segunda consola de superusuario preparada para tomar
+  acciones.
+
+\item Una consola de usuario normal para investigar.
+
+\item \emph{gnome-system-monitor} en modo de procesos.
+
+\item Eclipse con el proyecto de carga sintética arrancado.
+
+\end{itemize}
+
+\subsection{htop como root}
+\label{sec:htopoptions}
+
+Vamos a usar esta herramienta para identificar y actuar sobre procesos
+y pthreads.  Por lo tanto es importante que la personalicemos con las
+siguientes \textbf{opciones}.
+
+  \begin{itemize}
+  \item Meters $\leftarrow$ Hostname en la parte izquierda
+
+  \item Display options $\leftarrow$ Tree view ON
+  \item Display options $\leftarrow$ Hide kernel threads OFF
+  \item Display options $\leftarrow$ Hide userland threads OFF
+  \item Display options $\leftarrow$ Display threads in a different
+    color ON
+  \item Display options $\leftarrow$ Show custom thread names ON
+  \item Display options $\leftarrow$ Highlight program basename ON
+  \item Display options $\leftarrow$ Detailed CPU time ON
+
+
+  \item Poner las siguientes columnas:
+
+    \begin{description}
+    \item[PROCESSOR] Ultima CPU en la que corrió el proceso.  \textbf{Añadirla}
+
+    \item[PID] PID del proceso o pthread.
+
+    \item[TGID] En el caso de un proceso es el PID, para un pthread es
+      el PID del proceso al que pertenece. \textbf{Añadirla}
+
+    \item[USER] Usuario.
+
+    \item[NICE] (\textbf{Eliminar el campo PRIORITY}).  Valor de NICE de -20 a
+      19.  Valores negativos representan a procesos más codiciosos de CPU.
+
+
+    \item[M\_SIZE] Tamaño de memoria total del proceso.
+
+
+    \item[M\_RESIDENT] Tamaño de memoria residente del proceso.
+
+
+    \item[M\_SHARED] Tamaño de memoria mapeada compartida por el
+      proceso.
+
+
+    \item[STATE] Estado del proceso.
+
+
+    \item[PERCENT\_CPU] Porcentage de CPU consumida por el proceso en
+      el intervalo de muestreo. (UTIME + STIME - INSTANTE\_ANTERIOR\_DE\_MUESTREO)/PERIODO\_MUESTREO
+
+
+    \item[PERCENT\_MEM] Porcentage de la memoria residente respecto a
+      la memoria total.
+
+
+    \item[TIME] Tiempo de CPU consumido por el proceso o thread desde que
+      arrancó.  Suma de \emph{UTIME} y \emph{STIME}.
+
+
+    \item[UTIME] Tiempo de CPU consumido por el proceso en modo
+      usuario.
+
+
+    \item[STIME] Tiempo de CPU consumido por el proceso en modo
+      sistema.
+
+
+    \item[Command] Línea de comando
+
+    \end{description}
+
+  \end{itemize}
+
+
+\subsection{Traceado de ejecución}
+\label{sec:traceado}
+
+En una consola de superusuario activar el sistema debugfs y
+seleccionar \texttt{sched\_switch} como sistema de traceo.
+
+\begin{lstlisting}
+mkdir /debug
+mount -t debugfs none /debug
+cd /debug/tracing
+cat available_tracers
+echo sched_switch > current_tracer
+\end{lstlisting}
+
+
+
+
+\section{Aplicación aislada, uso de CPU}
+\label{sec:entorno}
+
+En un primer momento vamos a monitorizar  una \textbf{una tarea periódica} de
+0,3 s de carga y 1 seg de periodo.
+
+
+\subsection{Inspección inicial y preparación para las medidas}
+\label{sec:verificacioncualitativa}
+
+
+
+Los pasos a seguir son los siguientes:
+
+\begin{enumerate}
+\item Anotar la carga inicial de CPU del sistema.  En el caso de ser
+  multicore elegir aquella que permanezca menos cargada.\label{itemcpuloadstep:1}
+
+  \textbf{Carga inicial de la CPU numero:} \rule{1in}{.1pt}
+
+  Esto se puede hacer con el \emph{gnome-system-monitor}.
+
+\item Arrancar la \textbf{utilidad cliente} con los siguientes datos:
+
+  \begin{itemize}
+  \item \textbf{Generación}
+
+    \begin{itemize}
+    \item \textbf{Distribución}:  Constante
+    \item \textbf{Periodo}:  1 seg
+    \end{itemize}
+
+
+  \item \textbf{Carga de trabajo}
+    \begin{itemize}
+    \item \textbf{Distribución}:  Constante
+
+    \item \textbf{Tiempo medio}:  0.3 seg
+    \end{itemize}
+
+  \end{itemize}
+
+  El resto de datos es irrelevante.  \textbf{No dar a start aún}.
+
+
+\item Localizar el PID de la aplicación cliente con el
+  \emph{gnome-system-monitor} (modo jerárquico, colgando del
+  eclipse).
+
+  \textbf{PID de la aplicación java:} \rule{1in}{.1pt}
+
+
+\item En una consola de superusuario arrancar \emph{htop} y localizar
+  los pthreads asociados a la aplicación cliente java.
+
+
+\item En el caso de estar en una máquina multicore seleccionar desde
+  htop todos los pthreads de la aplicación cliente java y asignarles
+  una máscara de afinida para la CPU escogida en el punto
+  \ref{itemcpuloadstep:1}.
+
+
+\item Observar:
+
+  \begin{itemize}
+  \item En \emph{gnome-system-monitor} la carga de la CPU en aumenta
+    en el nivel dado por la aplicación.
+
+  \item En \emph{htop} los pthreads de la aplicación java consumen dicha parte de
+    carga del CPU.  ¿Todos?, ¿cuáles?
+
+
+  \item El periodo mostrado en la consola de apache (periodo real de
+    la aplicación) se acerca al periodo que le hemos pedido.
+
+
+  \end{itemize}
+
+
+\end{enumerate}
+
+
+
+
+
+% \bibliographystyle{abbrv}
+% \bibliography{prac_linux_tools}
+
+
+
+\end{document}
+

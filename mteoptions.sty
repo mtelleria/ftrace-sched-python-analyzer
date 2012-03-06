@@ -1,0 +1,335 @@
+%*
+%
+% MTESTY
+%
+% Personal style macros of Miguel Telleria
+%
+% Trying to apply ``common sense'' to the LaTeX world by including all
+% USEFUL packages
+%
+%*
+
+%% Style file guidelines from: 
+%% http://theoval.sys.uea.ac.uk/~nlct/latex/csed/csed.html
+%% And also from TLC2004
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  I D E N T I F I C A T I O N   P A R T  %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\ProvidesPackage{mteoptions}[2008/09/04 v0.1 (Miguel Telleria)]
+\NeedsTeXFormat{LaTeX2e} % No ConTeX, AMSLaTeX?? 
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  I N I T I A L    C O D E   P A R T  %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\RequirePackage{ifthen}  % Needed for development
+\RequirePackage{calc}    % Needed for development
+\RequirePackage{xkeyval} % Needed for development
+
+\RequirePackage{xspace}  % This package allows an space after a user command
+                         % definition so that commands won't need to
+                         % have an explicit {} or \_ separator.
+                         % However it does not fix this problem for
+                         % already-defined commands.
+
+\RequirePackage{comment} % Selectively include or exclude content
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  D E C L A R A T I O N   O F   O P T I O N S  %
+%                                               %
+% Here we specify how some options will be      %
+% passed to the loaded packages.  Note that     %
+% this DOES NOT LOAD the packages themselves.   %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Babel languages (note the last one will have predence to be the default
+% \DeclareOption{english}{\PassOptionsToPackage{english}{babel}}
+% \DeclareOption{french}{\PassOptionsToPackage{french}{babel}}
+\DeclareOption{spanish}{\PassOptionsToPackage{spanish}{babel}}
+
+% Input encoding
+\DeclareOption{latin1}{\PassOptionsToPackage{latin1}{inputenc}}
+\DeclareOption{utf8}{\PassOptionsToPackage{utf8}{inputenc}}
+
+% Font encoding
+\DeclareOption{OT1}{\PassOptionsToPackage{OT1}{fontenc}}
+\DeclareOption{T1}{\PassOptionsToPackage{T1}{fontenc}}
+
+
+% DVI driver
+\DeclareOption{dvips}{%
+\PassOptionsToPackage{dvips}{graphicx}%
+\PassOptionsToPackage{dvips}{graphics}%
+\PassOptionsToPackage{dvips}{hyperref}%
+\PassOptionsToPackage{dvips}{eso-pic}%  Makes it load eee-pic
+}
+\DeclareOption{pdftex}{%
+\PassOptionsToPackage{pdftex}{graphicx}%
+\PassOptionsToPackage{pdftex}{graphics}%
+\PassOptionsToPackage{pdftex}{hyperref}%
+}
+\DeclareOption{tex4ht}{%
+\PassOptionsToPackage{tex4ht}{graphicx}%
+\PassOptionsToPackage{tex4ht}{graphics}%
+\PassOptionsToPackage{tex4ht}{hyperref}%
+}
+\DeclareOption{dvipdfm}{%
+   \PassOptionsToPackage{dvipdfm}{graphicx}%
+   \PassOptionsToPackage{dvipdfm}{graphics}%
+   \PassOptionsToPackage{dvipdfm}{hyperref}%
+}
+\DeclareOption{ps2pdf}{%
+   \PassOptionsToPackage{ps2pdf}{hyperref}%
+}
+\DeclareOption{hypertex}{%
+   \PassOptionsToPackage{hypertex}{hyperref}%
+}
+\DeclareOption{xetex}{%
+   \PassOptionsToPackage{xetex}{graphicx}%
+   \PassOptionsToPackage{xetex}{graphics}%
+   \PassOptionsToPackage{xetex}{hyperref}%
+}
+
+% Boolean options
+\newboolean{bluesky}  % Whether to use Computer-Modern PS fonts or
+                      % native PS-fonts (times, helvetica, etc)
+
+\DeclareOption{bluesky}{\setboolean{bluesky}{true}}
+\DeclareOption{nobluesky}{\setboolean{bluesky}{false}}
+
+\newboolean{usemdwtab} % Whether using MDW-tabular redefition or
+                       % standard tabular definition (mdwtab is
+                       % incompatible with colortbl and footnotes
+                       % inside tabularx
+\DeclareOption{usemdwtab}{\setboolean{usemdwtab}{true}}
+\DeclareOption{nousemdwtab}{\setboolean{usemdwtab}{false}}
+
+
+\newboolean{beamer}
+\DeclareOption{beamer}{\setboolean{beamer}{true}}
+\DeclareOption{nobeamer}{\setboolean{beamer}{false}}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  E X E C U T I O N   O F   O P T I O N S  %
+%                                           %
+% We activate initial values for options.   %
+% They might be overwritten by other        %
+% options coming from packages.             %
+%                                           %
+% No option is passed to any package until  %
+% it is loaded                              %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\ExecuteOptions{pdftex,OT1,utf8,english,nobluesky,usemdwtab}
+% We process the options in the order given with usepackage
+\ProcessOptions* \relax % cf. TLC2004 p882
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  P A C K A G E   L O A D I N G   A N D   M A I N   C O D E   P A R T  %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% --------------------
+% Internationalization
+% --------------------
+\RequirePackage{babel}
+
+% -------------------
+% Fonts and encodings
+% -------------------
+\RequirePackage{inputenc}
+\RequirePackage{fontenc}
+\ifthenelse{\boolean{bluesky}}{}{\RequirePackage{mathptmx}\RequirePackage{helvet}}
+\RequirePackage{eurosym}
+\RequirePackage{mflogo} % Gives the \MF{} command for Metafont logo
+
+
+% ---------
+% Footnotes
+% ---------
+\ifthenelse{\boolean{beamer}}{}{\RequirePackage{footnote}}
+                          % To allow footnotes inside tabular.
+                          % Provides the footnote environment that allows
+                          % including \verb=
+                          % Attention:  it seems to be incompatible with
+                          % footnotes in tabularx
+                          %
+                          % It is incompatible with beamer
+
+%  CITATIONS (TLC2004, A.1p849)
+\newcounter{Citctr} \newsavebox{\Citname}
+\newenvironment{Citation}[1]
+{\sbox\Citname{\emph{#1}}%
+\stepcounter{Citctr}\begin{description}%
+\item[Citation \arabic{Citctr}]}% End of begin part
+{\hspace*{\fill}\nolinebreak[1]%
+\quad\hspace*{\fill}\usebox{\Citname}\end{description}}
+
+
+% -------------
+% Verbatim text
+% -------------
+\RequirePackage{shortvrb}  % Macros \MakeShortVerb y \DeleteShortVerb
+\RequirePackage{moreverb}
+\RequirePackage{fancyvrb} % Lots of utilities for verbatim text
+%\RequirePackage{verbdef} % Provides \verbdef\mycmd=my verb text= --> \mycmd
+\RequirePackage[nounderscore]{syntax}   % Provides shortverb allowed within footnotes
+                                        % Allows to use _ outside math-mode without
+                                        % escaping it, but conflicts with files refered
+                                        % by includegraphics!!
+
+\RequirePackage{alltt}     % Entorno alltt interpretando \ commands
+\RequirePackage{verbatim}  % Redefine entorno verbatim.
+                           % \end{verbatim} tiene que estar sólo
+                           % Crea tambien \verbatiminput
+
+% -------------
+% code listings
+% -------------
+\RequirePackage[final]{listings}
+% Need to load languages from the document (to avoid exhausting memory)
+%\lstloadlanguages{C,TeX,Ada,Perl,Python,SQL}
+
+
+% -----
+% Lists
+% -----
+\RequirePackage{mdwlist}        % for reducing the space in itemize* lists
+\RequirePackage{enumerate}      % Customise numeric lists
+
+% This environment defines an itemize list without the extra
+% vertical separation before the first and after the last item.  It
+% also reduces the inter-item separation.
+%
+% It is good for placing it in table cells
+\newenvironment{itemizecontracted}%
+{\begin{list}{$\bullet$}%
+{\setlength{\topsep}{0ex plus 0ex minus 0ex}%
+\setlength{\partopsep}{0ex plus 0ex minus 0ex}%
+\setlength{\parskip}{0ex plus 0ex minus 0ex}%
+\setlength{\itemsep}{0ex plus 0ex minus 0ex}%
+}}%
+{\end{list}}
+
+\newenvironment{letterlist}[1]%
+{%
+\renewcommand{\theenumi}{#1\arabic{enumi}}%
+\renewcommand{\labelenumi}{\theenumi.}}%
+{\renewcommand{\theenumi}{\arabic{enumi}.}%
+\renewcommand{\labelenumi}{\theenumi}}%
+
+\newenvironment{nanlist}%
+{%
+%Redefine the second level
+\renewcommand{\theenumii}{\arabic{enumi}.\Alph{enumii}.}%
+\renewcommand{\labelenumii}{\theenumii}%
+%
+%Redefine the third level
+\renewcommand{\theenumiii}{\arabic{enumi}.\Alph{enumii}.\arabic{enumiii}.}%
+\renewcommand{\labelenumiii}{\theenumiii}}%
+{%
+\renewcommand{\theenumii}{\arabic{enumi}.\arabic{enumii}.}%
+\renewcommand{\labelenumii}{\theenumii}%
+\renewcommand{\theenumiii}{\arabic{enumi}.\arabic{enumii}.\arabic{enumiii}.}%
+\renewcommand{\labelenumiii}{\theenumiii}}%
+
+
+
+
+
+% ------
+% Tables
+% ------
+\ifthenelse{\boolean{usemdwtab}}{\RequirePackage{mdwtab}}{\RequirePackage{colortbl}}
+                                % mdwtab REDEFINES tabular and array.  Footnotes are
+                                % supported automatically
+                                %
+                                % Incompatible with colortbl but works with color
+
+\RequirePackage{array}
+\RequirePackage{tabularx}  % Extensible columns
+\RequirePackage{tabulary}  % Content-balancing of columns
+\RequirePackage{dcolumn}   % Digitally tabbed columns.
+\RequirePackage{multirow}  % LR-Rows of more than one line.
+\RequirePackage{longtable} % Tables of more than one page
+
+
+\RequirePackage{threeparttable} % Allows table with notes
+% Adding footnotesize to TPTnoteSettings
+\renewcommand\TPTnoteSettings{%
+ \setlength\leftmargin{1.5em}%
+ \setlength\labelwidth{.5em}%
+ \setlength\labelsep{.2em}%
+ \rightskip\tabcolsep \leftskip\tabcolsep\footnotesize}
+
+
+% HEADER CELL (for table header)
+\newlength\headercelllength
+\newcommand\headercell[2][{}]{\settowidth\headercelllength{\textbf{#1}}%
+\ifthenelse{\lengthtest{\headercelllength = 0in}}%
+    {\settowidth\headercelllength{\textbf{#2}}}%
+{}%
+\colorbox[gray]{0.9}{\makebox[\headercelllength]{\textbf{#2}}}}
+
+
+% ROW styles
+% From: http://www.tex.ac.uk/cgi-bin/texfaq2html?label=wholerow
+\newcolumntype{K}{>{\global\let\currentrowstyle\relax}}
+\newcolumntype{^}{>{\currentrowstyle}}
+\newcommand{\rowstyle}[1]{\gdef\currentrowstyle{#1}%
+     #1\ignorespaces
+}
+
+% Now, we put 'K' before the first column specifier; and we put
+% \textasciicircum before the modifiers of subsequent ones. We then
+% use \rowstyle at the start of each row we want to modify: 
+%
+%     \begin{tabular}{|Kl|^l|^l|}   \hline
+%       \rowstyle{\bfseries}
+%       Heading & Big and & Bold \\ \hline
+%       Meek & mild & entry      \\
+%       Meek & mild & entry      \\
+%       \rowstyle{\itshape}
+%       Strange & and & italic   \\
+%       Meek & mild & entry      \\ \hline
+%     \end{tabular}
+
+
+
+
+% --------------------------
+% Graphics, color and floats
+% --------------------------
+\RequirePackage{graphicx} % for figures (in .pdf format for pdflatex)
+\RequirePackage{color}
+\RequirePackage{float}    % To have the H option in floating objects
+\RequirePackage{eso-pic}  % To place a picture in the top of one (or
+                          % all pages)
+
+% ------------------
+% URL and references
+% ------------------
+\RequirePackage{url} % For the \url to work (also inside bibtex fields)
+\ifthenelse{\boolean{beamer}}{}{\RequirePackage{html}} % To be used with latex2html
+\RequirePackage{hyperref} % for pdf hyperref
+%\hypersetup{backref=true,bookmarks=true}
+
+
+% Contadores, longitudes y cajas de usuario
+% -----------------------------------------
+\newcounter{counterusrone}
+\newcounter{counterusrtwo}
+\newcounter{counterusrthree}
+
+\newlength{\lengthusrone}
+\newlength{\lengthusrtwo}
+\newlength{\lengthusrthree}
+
+\newsavebox{\boxusrone}
+\newsavebox{\boxusrtwo}
+\newsavebox{\boxusrthree}
+
+
+\endinput

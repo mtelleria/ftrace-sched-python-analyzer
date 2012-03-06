@@ -8,11 +8,11 @@
 \lstset{basicstyle=\footnotesize}
 
 \begin{document}
-\title{Practica 1:  Monitoreo de CPU y Red con cargas sintéticas}
+\title{Practica 1:  Caracterización de la workload de CPU}
 
 \author{Miguel Tellería, Jose M. Drake}
 
-\date{8 Marzo 2011}
+\date{6 Marzo 20121}
 
 \maketitle
 \thispagestyle{empty} % no page number in the first page
@@ -22,209 +22,117 @@
 % -----------------------------------------------------------------------------
 \begin{abstract}
 
-El objetivo de la práctica es familiarizarse con el seguimiento del
-consumo de recursos por parte de aplicaciones, extracción de tasas y
-generación de estadísiticas.
+El objetivo de la práctica es familiarizarse con diferentes tipos de
+workloads de CPU y ser capaz de estimar a partir de una ejecución de
+CPU métricas de ocupación y utilización de la CPU.
 
 \end{abstract}
 
-\section{Entorno de trabajo}
-\label{sec:workenvironment}
+\section{Objetivo}
+\label{sec:objetivo}
 
-Para esta práctica sugerimos tener los siguientes programas arrancados
-y a mano para ser usados:
+Dada una configuración de nuestro programa de cargas sintéticas, ser
+capaz de:
 
 \begin{itemize}
-\item Una primera consola de superusuario corriendo \texttt{htop}.
-  Esta herramienta la usaremos para cambiar afinidad y valor nice de
-  cada proceso.
+\item Generar una captura de uso de CPU con ftrace/trace-cmd/kernelshark.
 
-\item Una segunda consola de superusuario preparada para tomar
-  acciones.
-
-\item Una consola de usuario normal para investigar.
-
-\item \emph{gnome-system-monitor} en modo de procesos.
-
-\item Eclipse con el proyecto de carga sintética arrancado.
+\item Extraer de los datos de dicha captura muestras para sacar
+  perfiles estadísticos.
 
 \end{itemize}
 
-\subsection{htop como root}
-\label{sec:htopoptions}
-
-Vamos a usar esta herramienta para identificar y actuar sobre procesos
-y pthreads.  Por lo tanto es importante que la personalicemos con las
-siguientes \textbf{opciones}.
-
-  \begin{itemize}
-  \item Meters $\leftarrow$ Hostname en la parte izquierda
-
-  \item Display options $\leftarrow$ Tree view ON
-  \item Display options $\leftarrow$ Hide kernel threads OFF
-  \item Display options $\leftarrow$ Hide userland threads OFF
-  \item Display options $\leftarrow$ Display threads in a different
-    color ON
-  \item Display options $\leftarrow$ Show custom thread names ON
-  \item Display options $\leftarrow$ Highlight program basename ON
-  \item Display options $\leftarrow$ Detailed CPU time ON
-
-
-  \item Poner las siguientes columnas:
-
-    \begin{description}
-    \item[PROCESSOR] Ultima CPU en la que corrió el proceso.  \textbf{Añadirla}
-
-    \item[PID] PID del proceso o pthread.
-
-    \item[TGID] En el caso de un proceso es el PID, para un pthread es
-      el PID del proceso al que pertenece. \textbf{Añadirla}
-
-    \item[USER] Usuario.
-
-    \item[NICE] (\textbf{Eliminar el campo PRIORITY}).  Valor de NICE de -20 a
-      19.  Valores negativos representan a procesos más codiciosos de CPU.
-
-
-    \item[M\_SIZE] Tamaño de memoria total del proceso.
-
-
-    \item[M\_RESIDENT] Tamaño de memoria residente del proceso.
-
-
-    \item[M\_SHARED] Tamaño de memoria mapeada compartida por el
-      proceso.
-
-
-    \item[STATE] Estado del proceso.
-
-
-    \item[PERCENT\_CPU] Porcentage de CPU consumida por el proceso en
-      el intervalo de muestreo. (UTIME + STIME - INSTANTE\_ANTERIOR\_DE\_MUESTREO)/PERIODO\_MUESTREO
-
-
-    \item[PERCENT\_MEM] Porcentage de la memoria residente respecto a
-      la memoria total.
-
-
-    \item[TIME] Tiempo de CPU consumido por el proceso o thread desde que
-      arrancó.  Suma de \emph{UTIME} y \emph{STIME}.
-
-
-    \item[UTIME] Tiempo de CPU consumido por el proceso en modo
-      usuario.
-
-
-    \item[STIME] Tiempo de CPU consumido por el proceso en modo
-      sistema.
-
-
-    \item[Command] Línea de comando
-
-    \end{description}
-
-  \end{itemize}
-
-
-\subsection{Traceado de ejecución}
-\label{sec:traceado}
-
-En una consola de superusuario activar el sistema debugfs y
-seleccionar \texttt{sched\_switch} como sistema de traceo.
-
-\begin{lstlisting}
-mkdir /debug
-mount -t debugfs none /debug
-cd /debug/tracing
-cat available_tracers
-echo sched_switch > current_tracer
-\end{lstlisting}
-
-
-
-
-\section{Aplicación aislada, uso de CPU}
-\label{sec:entorno}
-
-En un primer momento vamos a monitorizar  una \textbf{una tarea periódica} de
-0,3 s de carga y 1 seg de periodo.
-
-
-\subsection{Inspección inicial y preparación para las medidas}
-\label{sec:verificacioncualitativa}
-
-
-
-Los pasos a seguir son los siguientes:
-
-\begin{enumerate}
-\item Anotar la carga inicial de CPU del sistema.  En el caso de ser
-  multicore elegir aquella que permanezca menos cargada.\label{itemcpuloadstep:1}
-
-  \textbf{Carga inicial de la CPU numero:} \rule{1in}{.1pt}
-
-  Esto se puede hacer con el \emph{gnome-system-monitor}.
-
-\item Arrancar la \textbf{utilidad cliente} con los siguientes datos:
-
-  \begin{itemize}
-  \item \textbf{Generación}
-
-    \begin{itemize}
-    \item \textbf{Distribución}:  Constante
-    \item \textbf{Periodo}:  1 seg
-    \end{itemize}
-
-
-  \item \textbf{Carga de trabajo}
-    \begin{itemize}
-    \item \textbf{Distribución}:  Constante
-
-    \item \textbf{Tiempo medio}:  0.3 seg
-    \end{itemize}
-
-  \end{itemize}
-
-  El resto de datos es irrelevante.  \textbf{No dar a start aún}.
-
-
-\item Localizar el PID de la aplicación cliente con el
-  \emph{gnome-system-monitor} (modo jerárquico, colgando del
-  eclipse).
-
-  \textbf{PID de la aplicación java:} \rule{1in}{.1pt}
-
-
-\item En una consola de superusuario arrancar \emph{htop} y localizar
-  los pthreads asociados a la aplicación cliente java.
-
-
-\item En el caso de estar en una máquina multicore seleccionar desde
-  htop todos los pthreads de la aplicación cliente java y asignarles
-  una máscara de afinida para la CPU escogida en el punto
-  \ref{itemcpuloadstep:1}.
-
-
-\item Observar:
-
-  \begin{itemize}
-  \item En \emph{gnome-system-monitor} la carga de la CPU en aumenta
-    en el nivel dado por la aplicación.
-
-  \item En \emph{htop} los pthreads de la aplicación java consumen dicha parte de
-    carga del CPU.  ¿Todos?, ¿cuáles?
-
-
-  \item El periodo mostrado en la consola de apache (periodo real de
-    la aplicación) se acerca al periodo que le hemos pedido.
-
-
-  \end{itemize}
-
-
-\end{enumerate}
-
-
+\section{Trabajo a realizar}
+\label{sec:trabajo}
+
+\subsection{Ejecución y captura de cargas}
+\label{sec:ejecucionycaptura}
+
+La parte de lanzamiento y captura se puede hacer de manera manual
+obteniendo las siguientes capturas que se utilizarán como inputs de la
+fase siguiente.
+
+\begin{itemize}
+\item Captura de ejecución de \textbf{10 seg} de la aplicación de
+  Cliente con una ejecución de \textbf{carga constante}.
+
+\item Captura de ejecución de \textbf{60 seg} de la aplicación Cliente
+  con una ejecución de \textbf{carga constante}.
+
+\item Captura de ejecución de \textbf{10 seg} de la aplicación Cliente
+  con una ejecución de \textbf{carga exponencial}.
+
+\item Captura de ejecución de \textbf{60 seg} de la aplicación Cliente
+  con una ejecución de \textbf{carga exponencial.}
+\end{itemize}
+
+Cada ejecución será monitorizada con htop rellenándose la tabla \ref{tab:capturas}
+\end{document}
+
+\begin{table}
+  \centering
+  \begin{tabular}[ht]{|p{1in}|p{1in}|p{1in}|p{1in}|p{1in}|}
+    \textbf{Carga} & \textbf{Duración} & \textbf{Fichero} &
+    \textbf{PID} & \textbf{\% CPU en htop} \hline
+CTE & 10 sg & cte_10sg.dat & 2345 & 0.15 \\
+CTE & 60 sg & cte_60sg.dat & 2345 & 0.2 \\
+EXP & 10 sg & exp_10sg.dat & 3423 & 0.25 \\
+EXP & 60 sg & exp_60sg.dat & 3423 & 0.2 \\
+
+
+\end{tabular}
+  \caption{Tabla de ejecución y capturas}
+  \label{tab:capturas}
+\end{table}
+
+\subsection{Analizador de fragmentos}
+\label{sec:anacapturas}
+
+Visualizando las capturas con wireshark y aislando el thread generador
+de carga, se verán fragmentos de ejecución \emph{cuasi-continua} del
+thread frente a periodos vacíos entre ellos.
+
+Debido a la naturaleza del scheduler de Linux, estos fragmentos no son
+100\% continuos ya que al no ser de política SCHED\_FIFO ni SCHED\_RR
+el scheduler CFS dará tiempo a otros procesos a ejecutar.
+
+Por lo tanto hay que definir una \emph{granularidad} en el análisis
+para considerar si el programa ha dejado de ejecutar en la CPU un
+tiempo suficiente para 
+
+Este segundo paso se tiene que hacer de manera automática con un
+programa que tome las entradas siguientes:
+
+\begin{itemize}
+\item \textbf{Fichero de traza} en formato binario (trace.dat).
+\item \textbf{PID del programa a sacar}, idealmente podría admitir una
+  lista de PID's y generar una salida para cada uno.
+\item \textbf{Instantes de comienzo y final del estudio} dados en
+  tiempos relativos (milisegundos) a la traza capturada.
+\item \textbf{Granularidad de ejecución} Hueco máximo de ejecución que
+  se permite dentro de un fragmento para considerarlo ``un sólo bloque
+  de ejecución''.  Esta granularidad se mide en microsegundos.
+\end{itemize}
+
+El programa generará para cada PID una tabla de la forma siguiente:
+
+\begin{table}
+  \centering
+  \begin{tabular}[ht]{|p{1in}|p{1in}|p{1in}|p{1in}|p{1in}|}
+    \textbf{Num Fragmento} & \textbf{Instante comienzo} &
+    \textbf{Duracion} & \textbf{CPUs} & \textbf{Porcentage
+      de relleno} \\ \hline
+1 & 136.342 & 202.34 & 1 & 90 \\
+2 & 1140.5523 & 206.34 & 1 & 95 \\ 
+3 & 2123.323 & 198.34 & 1 0 & 92 \\
+  \end{tabular}
+  \caption{Tabla de salida del analizador de fragmentos}
+  \label{tab:analisis}
+\end{table}
+
+Esta tabla deberá ser fácil de importar a hojas de cálculo (OO Calc,
+Excel...) o entornos numéricos (Octave, Python Numpy, Matlab) para
+realizar gráficos y estudios estadísicos con ella.
 
 
 

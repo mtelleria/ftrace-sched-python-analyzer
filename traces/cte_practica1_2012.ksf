@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<KernelShark><TraceView><EventFilter><FilterType>all events</FilterType></EventFilter></TraceView><TraceGraph><EventFilter><FilterType>all events</FilterType></EventFilter></TraceGraph><GraphTaskFilter><TaskFilter><Task>20672</Task></TaskFilter></GraphTaskFilter><ListTaskFilter><TaskFilter><Task>20672</Task></TaskFilter></ListTaskFilter></KernelShark>

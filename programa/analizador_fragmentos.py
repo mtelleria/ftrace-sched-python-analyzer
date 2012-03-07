@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
 import sys
 
 # El fichero de texto se ha de generar de la forma
@@ -46,8 +49,7 @@ def main():
     nr_linea = 2
     # Bucle de lineas generales
     for linea in report_file:
-        nr_linea++
-        linea = report_file.readline()
+        nr_linea += 1
         
         # Metaformato de la linea
         # <Proceso_ejecutando> <cpu_ejecutando> <timestamp> <event_name> <params-eventname>
@@ -65,24 +67,50 @@ def main():
         evento = bloque_evento[0:-1]
 
         # Eventos de subsistemas no buscados son ignorados
-        [subsys, subevento] = evento.split('_')
-        if ! subsys in accepted_subsystems: continue
+
+        [subsys, separador, resto] = evento.partition('_')
+        if separador == '':
+            print "Evento: " + evento + " sin separador.  No se que hacer"
+            exit(-1)
+
+        if not subsys in accepted_subsystems: continue
 
         # Eventos que estan en discarded tambien son ignorados
         if evento in discarded_events: continue
 
         # Eventos del subsistema que no son conocidos generan un warning
-        if ! evento in processed_events:
+        if not evento in processed_events:
             
-            print "WARNING: Linea " + nr_linea + " Timestamp = " +
-                  timestamp + " evento " + evento + 
-                  " no esperado pero ignorado"
+            print ("WARNING: Linea " + nr_linea + " Timestamp = " + timestamp,
+                   " evento " + evento + " no esperado pero ignorado")
             continue
 
-        if (evento == '
-           
-        
+        if evento == 'sched_switch':
+            procesa_sched_switch(nr_linea, timestamp, bloques, linea)
+        elif evento == 'sched_wakeup':
+            procesa_sched_wakeup(nr_linea, timestamp, bloques, linea)
+        elif evento == 'sched_migrate_task':
+            procesa_sched_migrate_task(nr_linea, timestamp, bloques, linea)
+        else:
+            print 'Error aqui no hacemos nada'
+            exit(-1)
+
+# -------------------------------------
+
     
+def procesa_sched_switch(nr_linea, timestamp, bloques, linea):
+    print "Procesando sched_switch con",
+    print "nr_linea: " + nr_linea + " timestamp " + timestamp + "linea: " + linea
+
+def procesa_sched_wakeup(nr_linea, timestamp, bloques, linea):
+    print "Procesando sched_wakeup con",
+    print "nr_linea: " + nr_linea + " timestamp " + timestamp + "linea: " + linea
+
+def procesa_sched_migrate_task(nr_linea, timestamp, bloques, linea):
+    print "Procesando sched_migrate_task con",
+    print "nr_linea: " + nr_linea + " timestamp " + timestamp + "linea: " + linea
+
+
 
 
 if __name__ == '__main__':

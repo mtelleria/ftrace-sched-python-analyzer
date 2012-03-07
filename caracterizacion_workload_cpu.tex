@@ -87,9 +87,9 @@ EXP & 60 sg & exp\_60sg.dat & 3423 & 0.2 \\
 \subsection{Analizador de fragmentos}
 \label{sec:anafragmentos}
 
-Visualizando las capturas con wireshark y aislando el thread generador
+Visualizando las capturas con kernelshark y aislando el thread generador
 de carga, se verán fragmentos de ejecución \emph{cuasi-continua} del
-thread frente a periodos vacíos entre ellos.
+thread frente a periodos vacíos.
 
 Debido a la naturaleza del scheduler de Linux, estos fragmentos no son
 100\% continuos ya que al no ser de política SCHED\_FIFO ni SCHED\_RR
@@ -127,9 +127,9 @@ El programa generará para cada PID una tabla de la forma siguiente:
 \begin{table}[h!]
   \centering
   \begin{tabular}{p{0.7in}|p{0.7in}|p{0.7in}|p{0.7in}|p{0.7in}|p{0.7in}}
-    \textbf{Num Fragmento} & \textbf{Instante comienzo} &
-    \textbf{Duracion} & \textbf{CPUs} & \textbf{Porcentage
-      de relleno} & \textbf{Intervalo entre fragmento}\\ \hline
+    \textbf{Num Fragmento} & \textbf{Instante comienzo milsg} &
+    \textbf{Duracion milsg} & \textbf{CPUs} & \textbf{Porcentage
+      de relleno} & \textbf{Separación milsg}\\ \hline
 1 & 136.342 & 202.34 & 1 & 90 & 0 \\
 2 & 1140.5523 & 206.34 & 1 & 95 & 1004 \\ 
 3 & 2123.323 & 198.34 & 1 0 & 92 & 983\\
@@ -139,7 +139,7 @@ El programa generará para cada PID una tabla de la forma siguiente:
 \end{table}
 
 Esta tabla deberá ser fácil de importar a hojas de cálculo (OO Calc,
-Excel...) o entornos numéricos (Octave, Python Numpy, Matlab) para
+Excel...) o entornos matemáticos (Octave, Python Numpy, Matlab...) para
 realizar gráficos y estudios estadísicos con ella.
 
 \subsection{Visualización de histograma y estadísticas}

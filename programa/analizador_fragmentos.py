@@ -17,13 +17,87 @@ import sys
 #   BLOQUE-PROCESO-EJECUTANDO  [CPU] TIMESTAMP:  EVENTO:  PAR1=VAL1 PAR2=VAL2 PAR3=VAL3 ...
 #
 class glb:
-    report_filename = 'trace_cte_report_small.txt'
+    report_filename = 'report.txt'
     first_record = -1
     last_record = -1
 
-class out:
+
+class timestamp:
+    sg = 0
+    us = 0
+    
+    def __init__(self, cadena):
+        [self.sg, self.us] = cadena.split('.')
+        
+    def __init__(self, sg, us):
+        self.sg = sg
+        self.us = us
+
+    def stcopy(uno):
+        return timestamp(uno.sg, uno.us)
+
+    def __cmp__(self, other):
+        sg_cmp = cmp(self.sg, other.sg)
+        if sg_cmp != 0:
+            return sg_cmp
+        else:
+            return cmp(self.us, other.us)
+
+    def __add__(self, other):
+        us = self.us + other.us
+        sg = self.sg + other.sg
+
+        if (us > 1000000):
+            us -= 1000000
+            sg += 1
+
+        return timestamp(sg, us)
+
+    def __sub__(self, other):
+        sg = self.sg - other.sg
+        us = self.us - other.us
+        if us < 0 :
+            us += 1000000
+            sg -= 1
+
+        return timestamp(sg, us)
+
+    
+        
+        
+class res:
     pid_data = {}
     cpus = []
+    ts_first = new timestamp(0, 0)
+
+class muestra:
+    nr_linea = 0
+    linea = ""
+    ts_str = ""
+    evento = ""
+    subsys = ""
+    ts = timestamp()
+    basecmd = ""
+    pid_= -1
+    cpu = -1
+    param = []
+
+    def escribe(self):
+        print ("nr_linea: " + str(self.nr_linea) + " evento: " + self.evento + " subsys: " + self.subsys,
+               " ts: " str(self.ts.sg) + "." + str(self.ts.us) + " basecmd: " + self.basecmd,
+               " pid: " + self.pid + " CPU " + self.cpu + " param: " + str(self.param) )
+    
+
+
+class fragmento:
+    comienzo_ms = 0
+    duracion_ms = 0
+    cpus = [ ]
+    hueco = 0
+    separacion = 0
+    latency = 0
+    pid = 0
+
 
 # Eventos aceptados
 
@@ -57,8 +131,13 @@ def main():
 
         bloques = linea.split()
 
-        bloque_timestamp = bloques[2]
-        timestamp = bloque_timestamp[0:-1]
+        bloque_ts = bloques[2]
+        ts_str = bloque_ts[0:-1]
+        
+        if res.ts_first.sg == 0:
+            res.ts_first = timestamp(ts_str)
+
+
 
         # El 4o bloque es el evento que ademas tiene un : al final
         bloque_evento = bloques[3]
@@ -70,8 +149,8 @@ def main():
 
         [subsys, separador, resto] = evento.partition('_')
         if separador == '':
-            print "Evento: " + evento + " sin separador.  No se que hacer"
-            exit(-1)
+            exit_error_linea(nr_linea, ts_str, "Evento " + evento + " sin separador de subsystema")
+
 
         if not subsys in accepted_subsystems: continue
 
@@ -81,35 +160,76 @@ def main():
         # Eventos del subsistema que no son conocidos generan un warning
         if not evento in processed_events:
             
-            print ("WARNING: Linea " + nr_linea + " Timestamp = " + timestamp,
+            print ("WARNING: Linea " + nr_linea + " Timestamp = " + ts_str,
                    " evento " + evento + " no esperado pero ignorado")
             continue
 
+
+        # Realizamos la parte comun
+        muestra = muestra()
+
+        muestra.nr_linea = nr_linea
+        muestra.linea = linea
+        muestra.ts_str = ts_str
+        muestra.evento = evento
+        muestra.subsys = subsys
+        muestra.ts = timestamp(ts_str) - res.ts_first
+
+        # Bloque PID  ej:  trace-cmd-20674
+        [muestra.basecmd, separador, muestra.pid] = bloques[0].rpartition('-')
+        if separador == "":
+            exit_error_linea(nr_linea, ts_str, "Imposible separar basecmdline y PID")
+
+        # Bloque CPU  ej: [001]
+        cpu_str = bloques[1]
+        muestra.cpu = int(cpu_str[1:-1])
+        muestra.param = equal_asignments_to_dico(bloques[4:])
+        
+        muestra.escribe()
+        
+
+
         if evento == 'sched_switch':
-            procesa_sched_switch(nr_linea, timestamp, bloques, linea)
+            procesa_sched_switch(nr_linea, ts_str, bloques, linea)
         elif evento == 'sched_wakeup':
-            procesa_sched_wakeup(nr_linea, timestamp, bloques, linea)
+            procesa_sched_wakeup(nr_linea, ts_str, bloques, linea)
         elif evento == 'sched_migrate_task':
-            procesa_sched_migrate_task(nr_linea, timestamp, bloques, linea)
+            procesa_sched_migrate_task(nr_linea, ts_str, bloques, linea)
         else:
-            print 'Error aqui no hacemos nada'
-            exit(-1)
+            exit_error_linea(nr_linea, ts_str, "Error evento " + evento + " no soportado")
+
+    # PRINT RES
 
 # -------------------------------------
 
     
-def procesa_sched_switch(nr_linea, timestamp, bloques, linea):
+def procesa_sched_switch(nr_linea, ts_str, bloques, linea):
     print "Procesando sched_switch con",
-    print "nr_linea: " + nr_linea + " timestamp " + timestamp + "linea: " + linea
+    print "nr_linea: " + str(nr_linea) + " ts_str " + ts_str + "linea: " + linea
 
-def procesa_sched_wakeup(nr_linea, timestamp, bloques, linea):
+def procesa_sched_wakeup(nr_linea, ts_str, bloques, linea):
     print "Procesando sched_wakeup con",
-    print "nr_linea: " + nr_linea + " timestamp " + timestamp + "linea: " + linea
+    print "nr_linea: " + str(nr_linea) + " ts_str " + ts_str + "linea: " + linea
 
-def procesa_sched_migrate_task(nr_linea, timestamp, bloques, linea):
+def procesa_sched_migrate_task(nr_linea, ts_str, bloques, linea):
     print "Procesando sched_migrate_task con",
-    print "nr_linea: " + nr_linea + " timestamp " + timestamp + "linea: " + linea
+    print "nr_linea: " + str(nr_linea) + " ts_str " + ts_str + "linea: " + linea
 
+
+# ----------------------------------------
+
+def equal_asignments_to_dico(props):
+    res = {}
+    for prop in props:
+        [key, val] = prop.split('=')
+        res[key] = val
+
+    return res
+
+
+def exit_error_linea(nr_linea, ts_str, mensaje):
+    print "Linea " + str(nr_linea) + " TS " + ts_str + ": " + mensaje
+    exit(-1)
 
 
 

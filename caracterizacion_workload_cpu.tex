@@ -68,15 +68,15 @@ fase siguiente.
 
 Cada ejecución será monitorizada con htop rellenándose la tabla \ref{tab:capturas}
 
-\begin{table}
+\begin{table}[h!]
   \centering
-  \begin{tabular}[ht]{|p{1in}|p{1in}|p{1in}|p{1in}|p{1in}|}
+  \begin{tabular}{p{1in}|p{1in}|p{1in}|p{1in}|p{1in}}
     \textbf{Carga} & \textbf{Duración} & \textbf{Fichero} &
-    \textbf{PID} & \textbf{\% CPU en htop} \hline
-CTE & 10 sg & cte_10sg.dat & 2345 & 0.15 \\
-CTE & 60 sg & cte_60sg.dat & 2345 & 0.2 \\
-EXP & 10 sg & exp_10sg.dat & 3423 & 0.25 \\
-EXP & 60 sg & exp_60sg.dat & 3423 & 0.2 \\
+    \textbf{PID} & \textbf{\% CPU en htop} \\ \hline
+CTE & 10 sg & cte\_10sg.dat & 2345 & 0.15 \\
+CTE & 60 sg & cte\_60sg.dat & 2345 & 0.2 \\
+EXP & 10 sg & exp\_10sg.dat & 3423 & 0.25 \\
+EXP & 60 sg & exp\_60sg.dat & 3423 & 0.2 \\
 
 
 \end{tabular}
@@ -115,9 +115,9 @@ programa que tome las entradas siguientes:
 
 El programa generará para cada PID una tabla de la forma siguiente:
 
-\begin{table}
+\begin{table}[h!]
   \centering
-  \begin{tabular}[ht]{|p{1in}|p{1in}|p{1in}|p{1in}|p{1in}|}
+  \begin{tabular}{p{1in}|p{1in}|p{1in}|p{1in}|p{1in}}
     \textbf{Num Fragmento} & \textbf{Instante comienzo} &
     \textbf{Duracion} & \textbf{CPUs} & \textbf{Porcentage
       de relleno} \\ \hline

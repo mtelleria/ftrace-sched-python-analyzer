@@ -207,11 +207,11 @@ def main():
 
 
         if evento == 'sched_switch':
-            procesa_sched_switch(nr_linea, ts_str, bloques, linea)
+            procesa_sched_switch(muestra)
         elif evento == 'sched_wakeup':
-            procesa_sched_wakeup(nr_linea, ts_str, bloques, linea)
+            procesa_sched_wakeup(muestra)
         elif evento == 'sched_migrate_task':
-            procesa_sched_migrate_task(nr_linea, ts_str, bloques, linea)
+            procesa_sched_migrate_task(muestra)
         else:
             exit_error_linea(nr_linea, ts_str, "Error evento " + evento + " no soportado")
 
@@ -220,17 +220,17 @@ def main():
 # -------------------------------------
 
     
-def procesa_sched_switch(nr_linea, ts_str, bloques, linea):
+def procesa_sched_switch(muestra):
     print "Procesando sched_switch con",
-    print "nr_linea: " + str(nr_linea) + " ts_str " + ts_str + " linea: " + linea
+    print "nr_linea: " + str(muestra.nr_linea) + " ts_str " + muestra.ts_str + " linea: " + muestra.linea
 
-def procesa_sched_wakeup(nr_linea, ts_str, bloques, linea):
+def procesa_sched_wakeup(muestra):
     print "Procesando sched_wakeup con",
-    print "nr_linea: " + str(nr_linea) + " ts_str " + ts_str + " linea: " + linea
+    print "nr_linea: " + str(muestra.nr_linea) + " ts_str " + muestra.ts_str + " linea: " + muestra.linea
 
-def procesa_sched_migrate_task(nr_linea, ts_str, bloques, linea):
+def procesa_sched_migrate_task(muestra):
     print "Procesando sched_migrate_task con",
-    print "nr_linea: " + str(nr_linea) + " ts_str " + ts_str + " linea: " + linea
+    print "nr_linea: " + str(muestra.nr_linea) + " ts_str " + muestra.ts_str + " linea: " + muestra.linea
 
 
 # ----------------------------------------

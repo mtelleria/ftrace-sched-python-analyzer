@@ -22,19 +22,31 @@ class glb:
     last_record = -1
 
 
-class timestamp:
-    sg = 0
-    us = 0
-    
-    def __init__(self, cadena):
-        [self.sg, self.us] = cadena.split('.')
+class Timestamp:
+
+    def __init__(self):
+        self.sg = 0
+        self.us = 0
         
-    def __init__(self, sg, us):
+    def from_sg_us(self, sg, us):
         self.sg = sg
         self.us = us
+        return self
 
-    def stcopy(uno):
-        return timestamp(uno.sg, uno.us)
+    def from_string(self, cadena):
+        [sg, us] = cadena.split('.')
+        self.sg = int(sg)
+        self.us = int(us)
+        return self
+
+    def stcopy(self, uno):
+        otro = Timestamp()
+        otro.sg = uno.sg
+        otro.us = uno.us
+        return otro
+
+    def to_msg(self):
+        return int(self.sg * 1000 + self.us/1000)
 
     def __cmp__(self, other):
         sg_cmp = cmp(self.sg, other.sg)
@@ -51,7 +63,10 @@ class timestamp:
             us -= 1000000
             sg += 1
 
-        return timestamp(sg, us)
+        res = Timestamp()
+        res.sg = sg
+        res.us = us
+        return res
 
     def __sub__(self, other):
         sg = self.sg - other.sg
@@ -60,23 +75,24 @@ class timestamp:
             us += 1000000
             sg -= 1
 
-        return timestamp(sg, us)
+        res = Timestamp()
+        res.sg = sg
+        res.us = us
+        return res
 
-    
         
-        
-class res:
+class result:
     pid_data = {}
     cpus = []
-    ts_first = new timestamp(0, 0)
+    ts_first = Timestamp()
 
-class muestra:
+class Muestra:
     nr_linea = 0
     linea = ""
     ts_str = ""
     evento = ""
     subsys = ""
-    ts = timestamp()
+    ts = Timestamp()
     basecmd = ""
     pid_= -1
     cpu = -1
@@ -84,12 +100,12 @@ class muestra:
 
     def escribe(self):
         print ("nr_linea: " + str(self.nr_linea) + " evento: " + self.evento + " subsys: " + self.subsys,
-               " ts: " str(self.ts.sg) + "." + str(self.ts.us) + " basecmd: " + self.basecmd,
-               " pid: " + self.pid + " CPU " + self.cpu + " param: " + str(self.param) )
+               " ts: " + str(self.ts.sg) + "." + str(self.ts.us) + " basecmd: " + self.basecmd,
+               " pid: " + str(self.pid) + " CPU " + str(self.cpu) + " param: " + str(self.param) )
     
 
 
-class fragmento:
+class Fragmento:
     comienzo_ms = 0
     duracion_ms = 0
     cpus = [ ]
@@ -110,6 +126,7 @@ discarded_events = ['sched_stat_runtime']
 
 def main():
     
+
     report_file = open(glb.report_filename)
     
     # First contains C
@@ -134,10 +151,8 @@ def main():
         bloque_ts = bloques[2]
         ts_str = bloque_ts[0:-1]
         
-        if res.ts_first.sg == 0:
-            res.ts_first = timestamp(ts_str)
-
-
+        if result.ts_first.sg == 0:
+            result.ts_first.from_string(ts_str)
 
         # El 4o bloque es el evento que ademas tiene un : al final
         bloque_evento = bloques[3]
@@ -166,14 +181,15 @@ def main():
 
 
         # Realizamos la parte comun
-        muestra = muestra()
+        muestra = Muestra()
 
         muestra.nr_linea = nr_linea
         muestra.linea = linea
         muestra.ts_str = ts_str
         muestra.evento = evento
         muestra.subsys = subsys
-        muestra.ts = timestamp(ts_str) - res.ts_first
+        muestra.ts = Timestamp()
+        muestra.ts = muestra.ts.from_string(ts_str) - result.ts_first
 
         # Bloque PID  ej:  trace-cmd-20674
         [muestra.basecmd, separador, muestra.pid] = bloques[0].rpartition('-')
@@ -198,22 +214,22 @@ def main():
         else:
             exit_error_linea(nr_linea, ts_str, "Error evento " + evento + " no soportado")
 
-    # PRINT RES
+    # PRINT RESULT
 
 # -------------------------------------
 
     
 def procesa_sched_switch(nr_linea, ts_str, bloques, linea):
     print "Procesando sched_switch con",
-    print "nr_linea: " + str(nr_linea) + " ts_str " + ts_str + "linea: " + linea
+    print "nr_linea: " + str(nr_linea) + " ts_str " + ts_str + " linea: " + linea
 
 def procesa_sched_wakeup(nr_linea, ts_str, bloques, linea):
     print "Procesando sched_wakeup con",
-    print "nr_linea: " + str(nr_linea) + " ts_str " + ts_str + "linea: " + linea
+    print "nr_linea: " + str(nr_linea) + " ts_str " + ts_str + " linea: " + linea
 
 def procesa_sched_migrate_task(nr_linea, ts_str, bloques, linea):
     print "Procesando sched_migrate_task con",
-    print "nr_linea: " + str(nr_linea) + " ts_str " + ts_str + "linea: " + linea
+    print "nr_linea: " + str(nr_linea) + " ts_str " + ts_str + " linea: " + linea
 
 
 # ----------------------------------------

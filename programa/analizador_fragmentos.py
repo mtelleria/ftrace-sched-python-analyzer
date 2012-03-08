@@ -122,7 +122,8 @@ accepted_subsystems = ['sched']
 
 # Dentro de los no filtrados eventos que no esten aqui provocan un warning
 processed_events = ['sched_switch', 'sched_wakeup', 'sched_migrate_task']
-discarded_events = ['sched_stat_runtime']
+#discarded_events = ['sched_stat_runtime']
+discarded_events = ['sched_runtime']
 
 def main():
     
@@ -175,7 +176,7 @@ def main():
         # Eventos del subsistema que no son conocidos generan un warning
         if not evento in processed_events:
             
-            print ("WARNING: Linea " + nr_linea + " Timestamp = " + ts_str,
+            print ("WARNING: Linea " + str(nr_linea) + " Timestamp = " + ts_str,
                    " evento " + evento + " no esperado pero ignorado")
             continue
 

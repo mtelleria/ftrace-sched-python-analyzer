@@ -22,6 +22,24 @@ class inp:
     last_record = -1
     granularity = 30
 
+class glb:
+    # Eventos que no pertenezcan a estos subsistemas son filtrados
+    accepted_subsystems = ['sched']
+
+    # Dentro de los aceptados, estos eventos son tambien ignorados
+    discarded_events = ['sched_stat_runtime']
+
+    # Estos son los eventos procesados
+    processed_events = ['sched_switch', 'sched_wakeup', 'sched_migrate_task']
+
+    # Eventos dentro de los subsistemas que no son ni ignorados ni procesados 
+    # provocan un warning
+
+    # Obtenido de trace-cmd --events | less (y buscando sched_switch)
+    state_num_to_char = {"0x0":'R', "0x1":'S', "0x2":"D", "0x4":"T", "0x8":"t", "0x10":"Z", 
+                         "0x20":"X", "0x40":"x", "0x80":"W"}
+
+
 class Timestamp:
 
     def __init__(self, sg=0, us=0, string=""):
@@ -130,51 +148,7 @@ class Lwp_data:
         total_exec = Timestamp(0, 0)
         total_hueco = Timestamp(0, 0)
     
-    
-    
-    def new_sched_switch_out(self, muestra):
-        self.pid = muestra.param.prev_pid
-        self.basecmd = muestra.param.prev_comm
 
-        self.state = glb.state_num_to_char{muestra.param.prev_state}
-        self.active = False
-        
-        self.last_wakeup = new Timestamp()
-        self.last_sched_in = new Timestamp()
-        self.last_sched_out = muestra.ts
-        self.total_exec = new Timestamp()
-        self.total_hueco = new Timestamp()
-
-    def new_sched_switch_in(self, muestra):
-        self.pid = muestra.param.next_pid
-        self.basecmd = muestra.param.next_comm
-
-        self.active = True
-
-        self.last_wakeup = new Timestamp()
-        self.last_sched_in = muestra.ts
-        self.last_sched_out = Timestamp()
-        self.total_exec = new Timestamp()
-        self.total_hueco = new Timestamp()
-
-
-
-class glb:
-    # Eventos que no pertenezcan a estos subsistemas son filtrados
-    accepted_subsystems = ['sched']
-
-    # Dentro de los aceptados, estos eventos son tambien ignorados
-    discarded_events = ['sched_stat_runtime']
-
-    # Estos son los eventos procesados
-    processed_events = ['sched_switch', 'sched_wakeup', 'sched_migrate_task']
-
-    # Eventos dentro de los subsistemas que no son ni ignorados ni procesados 
-    # provocan un warning
-
-    # Obtenido de trace-cmd --events | less (y buscando sched_switch)
-    state_num_to_char = {"0x0":'R', "0x1":'S', "0x2":"D", "0x4":"T", "0x8":"t", "0x10":"Z", 
-                         "0x20":"X", "0x40":"x", "0x80":"W"}
 
 def main():
     
@@ -294,7 +268,7 @@ def procesa_sched_switch(muestra):
         lwp_saliente.pid = muestra.param.prev_pid
         lwp_saliente.basecmd = muestra.param.prev_comm
 
-        lwp_saliente.state = glb.state_num_to_char{muestra.param.prev_state}
+        lwp_saliente.state = glb.state_num_to_char[muestra.param.prev_state]
         lwp_saliente.active = False
         
         lwp_saliente.last_sched_out = muestra.ts
@@ -304,10 +278,10 @@ def procesa_sched_switch(muestra):
         lwp_saliente.total_exec = new Timestamp()
         lwp_saliente.total_hueco = new Timestamp()
 
-        res.lwp_dico{pid_saliente} = lwp_saliente
+        res.lwp_dico[pid_saliente] = lwp_saliente
 
     else:
-        lwp_saliente = res.lwp_dico{pid_saliente}
+        lwp_saliente = res.lwp_dico[pid_saliente]
 
         # Sanity checks
         # -------------
@@ -366,7 +340,7 @@ def procesa_sched_switch(muestra):
         lwp_saliente.last_sched_out = muestra.ts
         lwp_saliente.last_sched_in = Timestamp(0,0)
         lwp_saliente.active = False
-        lwp_saliente.state = glb.state_num_to_char{muestra.param.prev_state}
+        lwp_saliente.state = glb.state_num_to_char[muestra.param.prev_state]
 
     # Tratamiento del PID entrante #
     # -----------------------------#
@@ -375,34 +349,33 @@ def procesa_sched_switch(muestra):
     # -  Primer fragmento:  No hay last_sched_out, puede haber (o no) last_wakeup
     # -  Hueco:  Hay sched_out y el espacio_vacio < granularity
     # -  Nuevo fragmento:  Se termino el "estado hueco" si lo habia y empezamos un nuevo fragmento
-
-
     if not pid_entrante in res.lwp_dico:
         # Nuevo pid entrante.  Estado nuevo
         lwp_entrante = Lwp_data()
-        lwp_entrante.new_sched_switch_in(muestra)
-        res.lwp_dico{next_pid} = lwp_entrante
+        lwp_entrante.pid = muestra.param.next_pid
+        lwp_entrante.basecmd = muestra.param.next_comm
+
+        lwp_entrante.active = True
+        lwp_entrante.last_sched_in = muestra.ts
+
+        res.lwp_dico[pid_entrante] = lwp_entrante
     else:
-        lwp_entrante = res.lwp_dico{pid_entrante}
+        lwp_entrante = res.lwp_dico[pid_entrante]
 
         # Sanity checks
         if lwp_entrante.active :
-            exit_error_logico(muestra.linea, muestra_ts_str, 
-                              " PID " + str(pid_entrante) + " tiene 1 sched_in estando ya activo")
+            exit_error_logico(muestra, pid_entrante, " tiene 1 sched_in estando ya activo")
         
-        if ( not lwp_entrante.last_sched_out == Timestamp(0,0) ) and (lwp_entrante.last_wakeup == Timestamp(0,0) ):
-            exit_error_logico(muestra.linea, muestra_ts_str, 
-                              " PID " + str(pid_entrante) + " tiene un periodo sched_out y sched_in sin wakeup en medio")
+        if lwp_entrante.last_sched_out != Timestamp(0,0) and lwp_entrante.last_wakeup == Timestamp(0,0):
+            exit_error_logico(muestra, pid_entrante, "tiene un periodo sched_out y sched_in sin wakeup en medio")
 
         if  lwp_entrante.last_sched_in == Timestamp(0,0):
-            exit_error_logico(muestra.linea, muestra_ts_str,
-                              " PID " + str(pid_entrante) + " tiene un dos sched_in seguidos sin sched_out en medio")
+            exit_error_logico(muestra, pid_entrante, "tiene un dos sched_in seguidos sin sched_out en medio")
 
         # NOTA:  Este check es mas de la propia script que de
         #        los datos.
         if lwp_entrante.last_sched_out == Timestamp(0, 0) and len(lwp_entrante.fragmentos) > 0:
-            exit_error_logico(muestra.linea, muestra_ts_str,
-                              " PID " + str(pid_entrante) + " sched_out es nulo pero tiene un fragmento anterior")
+            exit_error_logico(muestra, pid_entrante, "sched_out es nulo pero tiene un fragmento anterior")
 
 
         # Miramos si estamos somos los primeros y si estamos en hueco
@@ -435,9 +408,31 @@ def procesa_sched_switch(muestra):
         lwp_entrante.last_sched_out = Timestamp(0,0)
     
 
+# sched_wakeup tiene los siguientes params:
+#
+# -  comm
+# -  pid
+# -  prio
+# -  success
+# -  target_cpu
+
 def procesa_sched_wakeup(muestra):
-    print "Procesando sched_wakeup con",
-    print "nr_linea: " + str(muestra.nr_linea) + " ts_str " + muestra.ts_str + " linea: " + muestra.linea
+
+    if not muestra.param.pid in res.lwp_dico:
+        # Nuevo PID que se despierta
+        lwp_wakeup = Lwp_data()
+        lwp_wakeup.pid = muestra.param.pid
+        lwp_wakeup.basecmd = muestra.param.conn
+
+        res.lwp.dico[muestra.param.pid] = lwp_wakeup
+    else:
+        lwp_wakeup = res.lwp_dico[muestra.param.pid]
+        
+        # Sanity check
+        if lwp_wakeup.basecmd != muestra.param.comm :
+            exit_error_logico(muestra, muestra.param.pid, "sched_wakeup shows a different basecmd")
+
+    lwp_wakeup.last_wakeup = muestra.ts
 
 def procesa_sched_migrate_task(muestra):
     print "Procesando sched_migrate_task con",
@@ -459,7 +454,7 @@ def exit_error_linea(nr_linea, ts_str, mensaje):
     print "Linea " + str(nr_linea) + " TS " + ts_str + ": " + mensaje
     exit(-1)
 
-def statenum2statechar(state_num):
+
     
              
 def exit_error_logico(muestra, pid, mensaje):

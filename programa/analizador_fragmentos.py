@@ -100,16 +100,17 @@ class res:
     ts_first = Timestamp()
 
 class Muestra:
-    nr_linea = 0
-    linea = ""
-    ts_str = ""
-    evento = ""
-    subsys = ""
-    ts = Timestamp()
-    basecmd = ""
-    pid_= -1
-    cpu = -1
-    param = []
+    def __init__(self):
+        self.nr_linea = 0
+        self.linea = ""
+        self.ts_str = ""
+        self.evento = ""
+        self.subsys = ""
+        self.ts = Timestamp()
+        self.basecmd = ""
+        self.pid = -1
+        self.cpu = -1
+        self.param = []
 
     def escribe(self):
         print ("nr_linea: " + str(self.nr_linea) + " evento: " + self.evento + " subsys: " + self.subsys,
@@ -119,36 +120,37 @@ class Muestra:
 
 
 class Fragmento:
-    comienzo = Timestamp()
-    duracion = Timestamp()
-    cpus = [ ]
-    hueco = 0
-    separacion = 0
-    latency = 0
-    pid = 0
+    def __init__(self):
+        self.comienzo = Timestamp()
+        self.duracion = Timestamp()
+        self.cpus = [ ]
+        self.hueco = Timestamp()
+        self.separacion = Timestamp()
+        self.latency = Timestamp()
+        self.pid = 0
 
 class Lwp_data:
 
     def __init__(self):
         # Estaticos
-        basecmd = ""
-        pid = 0
+        self.basecmd = ""
+        self.pid = 0
 
         # Dinamicos
-        state = "S"
+        self.state = "S"
     
         # As infered by us
-        active = False
-        en_hueco = False
+        self.active = False
+        self.en_hueco = False
     
-        last_wakeup = Timestamp(0, 0)
-        last_sched_in = Timestamp(0, 0)
-        last_sched_out = Timestamp(0, 0)
+        self.last_wakeup = Timestamp(0, 0)
+        self.last_sched_in = Timestamp(0, 0)
+        self.last_sched_out = Timestamp(0, 0)
 
-        fragmentos = []
+        self.fragmentos = []
 
-        total_exec = Timestamp(0, 0)
-        total_hueco = Timestamp(0, 0)
+        self.total_exec = Timestamp(0, 0)
+        self.total_hueco = Timestamp(0, 0)
     
 
 
@@ -223,7 +225,8 @@ def main():
         [muestra.basecmd, separador, muestra.pid] = bloques[0].rpartition('-')
         if separador == "":
             exit_error_linea(nr_linea, ts_str, "Imposible separar basecmdline y PID")
-
+        muestra.pid = int(muestra.pid)
+        
         # Bloque CPU  ej: [001]
         cpu_str = bloques[1]
         muestra.cpu = int(cpu_str[1:-1])
@@ -276,11 +279,11 @@ def main():
 # ------------------------------------------    
 def procesa_sched_switch(muestra):
     
-    pid_saliente = muestra.param["prev_pid"]
+    pid_saliente = int(muestra.param["prev_pid"])
     if pid_saliente == 0 :
         pid_saliente = -1*muestra.cpu
 
-    pid_entrante = muestra.param["next_pid"]
+    pid_entrante = int(muestra.param["next_pid"])
     if pid_entrante == 0 :
         pid_entrante = -1*muestra.cpu
 
@@ -347,9 +350,6 @@ def procesa_sched_switch(muestra):
 
             fragmento.cpus.append(muestra.cpu)
 
-            # Actualizamos datos en el lwp
-            lwp.last_wakeup = Timestamp(0,0)
-
         else:
             # Estamos en hueco, sacamos el fragmento de la lista
             # de fragmentos para actualizarlo
@@ -359,7 +359,7 @@ def procesa_sched_switch(muestra):
                 fragmento.cpus.append(muestra.cpu)
 
         # Comun (para actualizacion y para nuevo)
-        fragmento.duracion = muestra.ts - fragmento_comienzo
+        fragmento.duracion = muestra.ts - fragmento.comienzo
         
         # Agnadimos el fragmento a la lista del LWP
         lwp_saliente.fragmentos.append(fragmento)
@@ -368,6 +368,7 @@ def procesa_sched_switch(muestra):
         lwp_saliente.total_exec += (muestra.ts - lwp_saliente.last_sched_in)
         lwp_saliente.last_sched_out = muestra.ts
         lwp_saliente.last_sched_in = Timestamp(0,0)
+        lwp_saliente.last_wakeup = Timestamp(0,0)
         lwp_saliente.active = False
         lwp_saliente.state = glb.state_num_to_char[muestra.param["prev_state"]]
 
@@ -395,7 +396,6 @@ def procesa_sched_switch(muestra):
         if lwp_entrante.active :
             exit_error_logico(muestra, pid_entrante, " tiene 1 sched_in estando ya activo")
         
-        
         if lwp_entrante.last_sched_out != Timestamp(0,0) and lwp_entrante.last_wakeup == Timestamp(0,0):
             exit_error_logico(muestra, pid_entrante, "tiene un periodo sched_out y sched_in sin wakeup en medio")
 
@@ -408,17 +408,17 @@ def procesa_sched_switch(muestra):
             exit_error_logico(muestra, pid_entrante, "sched_out es nulo pero tiene un fragmento anterior")
 
 
-        # Miramos si estamos somos los primeros y si estamos en hueco
-        # -----------------------------------------------------------
+        # Miramos si somos los primeros y si estamos en hueco
+        # ---------------------------------------------------
         if lwp_entrante.last_sched_out == Timestamp(0,0):
             # Primer arranque
             if lwp_entrante.last_wakeup != Timestamp(0,0):
                 lwp_entrante.latency = muestra.ts - lwp_entrante.last_wakeup
             else:
-                lwp_entrante.latency = -1 # Signalling that first latency is missing
+                lwp_entrante.latency = Timestamp(0,-1) # Signalling that first latency is missing
 
         else:
-            tiempo_vacio = timestamp.ts - lwp_entrante.last_sched_out
+            tiempo_vacio = muestra.ts - lwp_entrante.last_sched_out
 
             if (tiempo_vacio < inp.granularity):
                 # Estamos en hueco
@@ -433,7 +433,7 @@ def procesa_sched_switch(muestra):
                 lwp_entrante.latency = muestra.ts - lwp_entrante.last_wakeup
                 
         # Actualizamos campos comunes
-        lwp_entrante.last_sched_in = timestamp.ts
+        lwp_entrante.last_sched_in = muestra.ts
         lwp_entrante.activo = True
         lwp_entrante.last_sched_out = Timestamp(0,0)
     
@@ -452,9 +452,9 @@ def procesa_sched_wakeup(muestra):
         # Nuevo PID que se despierta
         lwp_wakeup = Lwp_data()
         lwp_wakeup.pid = muestra.param["pid"]
-        lwp_wakeup.basecmd = muestra.param["conn"]
+        lwp_wakeup.basecmd = muestra.param["comm"]
 
-        res.lwp.dico[muestra.param["pid"]] = lwp_wakeup
+        res.lwp_dico[muestra.param["pid"]] = lwp_wakeup
     else:
         lwp_wakeup = res.lwp_dico[muestra.param["pid"]]
         
@@ -491,7 +491,7 @@ def exit_error_linea(nr_linea, ts_str, mensaje):
     
              
 def exit_error_logico(muestra, pid, mensaje):
-    print "Linea " + str(muestra.nr_linea) + " TS: " + muestra.ts_str + "PID: " + pid + ": " + mensaje
+    print "Linea " + str(muestra.nr_linea) + " TS: " + muestra.ts_str + "PID: " + str(pid) + ": " + mensaje
 
 
 

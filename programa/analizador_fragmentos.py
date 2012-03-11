@@ -140,7 +140,7 @@ class Lwp_data:
         self.state = "S"
     
         # As infered by us
-        self.active = False
+        self.activo = False
         self.en_hueco = False
     
         self.last_wakeup = Timestamp(0, 0)
@@ -299,17 +299,6 @@ def procesa_sched_switch(muestra):
 
         lwp_saliente.pid = pid_saliente
         lwp_saliente.basecmd = muestra.param["prev_comm"]
-
-        lwp_saliente.state = glb.state_num_to_char[muestra.param["prev_state"]]
-        lwp_saliente.active = False
-        
-        lwp_saliente.last_sched_out = muestra.ts
-        lwp_saliente.last_wakeup = Timestamp()
-        lwp_saliente.last_sched_in = Timestamp()
-        lwp_saliente.last_sched_out = muestra.ts
-        lwp_saliente.total_exec = Timestamp()
-        lwp_saliente.total_hueco = Timestamp()
-
         res.lwp_dico[pid_saliente] = lwp_saliente
 
     else:
@@ -318,23 +307,21 @@ def procesa_sched_switch(muestra):
         # Sanity checks
         # -------------
         if lwp_saliente.basecmd != muestra.param["prev_comm"]:
-            exit_error_logico(muestra, pid_saliente, "nuevo basecmdline, anterior: " 
+            warning_error_logico(muestra, pid_saliente, "nuevo basecmdline, anterior: " 
                               + lwp_saliente.basecmd + " nuevo: " + muestra.param["prev_comm"])
 
         if lwp_saliente.last_sched_in == Timestamp(0,0):
-            exit_error_logico(muestra, pid_saliente, "tiene 2 sched_out sin ningun sched_in")
+            warning_error_logico(muestra, pid_saliente, "tiene 2 sched_out sin ningun sched_in")
 
-        if not lwp_saliente.active:
-            exit_error_logico(muestra, pid_saliente, "sale del scheduler estando inactivo")
+        if not lwp_saliente.activo:
+            warning_error_logico(muestra, pid_saliente, "sale del scheduler estando inactivo")
 
         if lwp_saliente.last_wakeup != Timestamp(0,0) and lwp_saliente.last_sched_in == Timestamp(0,0):
-            exit_error_logico(muestra, pid_saliente, "wakeup y sched_out sin sched_in en medio")
+            warning_error_logico(muestra, pid_saliente, "wakeup y sched_out sin sched_in en medio")
 
         if pid_saliente != muestra.pid:
-            exit_error_logico(muestra, pid_saliente, 
+            warning_error_logico(muestra, pid_saliente, 
                               "el PID saliente no se corresponde con el PID de la muestra: " + muestra.pid)
-
-        
             
         # Vemos si estamos en hueco o no (detectado por sched_in)
         if not lwp_saliente.en_hueco:
@@ -347,7 +334,6 @@ def procesa_sched_switch(muestra):
                 fragmento_previo = lwp_saliente.fragmentos[-1]
                 fragmento.separacion = fragmento.comienzo - fragmento_previo.comienzo
                 
-
             fragmento.cpus.append(muestra.cpu)
 
         else:
@@ -366,11 +352,13 @@ def procesa_sched_switch(muestra):
 
         # Actualizamos datos del LWP
         lwp_saliente.total_exec += (muestra.ts - lwp_saliente.last_sched_in)
-        lwp_saliente.last_sched_out = muestra.ts
         lwp_saliente.last_sched_in = Timestamp(0,0)
         lwp_saliente.last_wakeup = Timestamp(0,0)
-        lwp_saliente.active = False
-        lwp_saliente.state = glb.state_num_to_char[muestra.param["prev_state"]]
+        
+    # Acciones comunes para LWP nuevos y los conocidos
+    lwp_saliente.last_sched_out = muestra.ts
+    lwp_saliente.activo = False
+    lwp_saliente.state = glb.state_num_to_char[muestra.param["prev_state"]]
 
     # Tratamiento del PID entrante #
     # -----------------------------#
@@ -385,57 +373,57 @@ def procesa_sched_switch(muestra):
         lwp_entrante.pid = pid_entrante
         lwp_entrante.basecmd = muestra.param["next_comm"]
 
-        lwp_entrante.active = True
-        lwp_entrante.last_sched_in = muestra.ts
-
         res.lwp_dico[pid_entrante] = lwp_entrante
     else:
         lwp_entrante = res.lwp_dico[pid_entrante]
 
         # Sanity checks
-        if lwp_entrante.active :
-            exit_error_logico(muestra, pid_entrante, " tiene 1 sched_in estando ya activo")
+        if lwp_entrante.activo :
+            warning_error_logico(muestra, pid_entrante, " tiene 1 sched_in estando ya activo")
         
-        if lwp_entrante.last_sched_out != Timestamp(0,0) and lwp_entrante.last_wakeup == Timestamp(0,0):
-            exit_error_logico(muestra, pid_entrante, "tiene un periodo sched_out y sched_in sin wakeup en medio")
+        # Por alguna razon los procesos idle/swapper no tienen eventos wakeup
+        if lwp_entrante > 0:
+            if lwp_entrante.last_sched_out != Timestamp(0,0) and lwp_entrante.last_wakeup == Timestamp(0,0):
+                warning_error_logico(muestra, pid_entrante, 
+                                     "tiene un periodo sched_out y sched_in sin wakeup en medio")
 
-        if  lwp_entrante.last_sched_in == Timestamp(0,0):
-            exit_error_logico(muestra, pid_entrante, "tiene un dos sched_in seguidos sin sched_out en medio")
+        if  lwp_entrante.last_sched_in != Timestamp(0,0):
+            warning_error_logico(muestra, pid_entrante, "tiene un dos sched_in seguidos sin sched_out en medio")
 
         # NOTA:  Este check es mas de la propia script que de
         #        los datos.
         if lwp_entrante.last_sched_out == Timestamp(0, 0) and len(lwp_entrante.fragmentos) > 0:
-            exit_error_logico(muestra, pid_entrante, "sched_out es nulo pero tiene un fragmento anterior")
+            warning_error_logico(muestra, pid_entrante, "sched_out es nulo pero tiene un fragmento anterior")
 
 
-        # Miramos si somos los primeros y si estamos en hueco
-        # ---------------------------------------------------
-        if lwp_entrante.last_sched_out == Timestamp(0,0):
-            # Primer arranque
-            if lwp_entrante.last_wakeup != Timestamp(0,0):
-                lwp_entrante.latency = muestra.ts - lwp_entrante.last_wakeup
-            else:
-                lwp_entrante.latency = Timestamp(0,-1) # Signalling that first latency is missing
-
+    # Miramos si somos los primeros y si estamos en hueco
+    # ---------------------------------------------------
+    if lwp_entrante.last_sched_out == Timestamp(0,0):
+        # Primer arranque
+        if lwp_entrante.last_wakeup != Timestamp(0,0):
+            lwp_entrante.latency = muestra.ts - lwp_entrante.last_wakeup
         else:
-            tiempo_vacio = muestra.ts - lwp_entrante.last_sched_out
+            lwp_entrante.latency = Timestamp(0,-1) # Signalling that first latency is missing
 
-            if (tiempo_vacio < inp.granularity):
-                # Estamos en hueco
-                lwp_entrante.en_hueco = True
-                fragmento = lwp_entrante.fragmentos.pop(-1)
-                fragmento.hueco += tiempo_vacio
-                lwp_entrante.total_hueco += tiempo_vacio
-                lwp_entrante.fragmentos.append(fragmento)
-            else:
-                # Una entrada normal ya no estamos en hueco
-                lwp_entrante.en_hueco = False
-                lwp_entrante.latency = muestra.ts - lwp_entrante.last_wakeup
+    else:
+        tiempo_vacio = muestra.ts - lwp_entrante.last_sched_out
+
+        if (tiempo_vacio < inp.granularity):
+            # Estamos en hueco
+            lwp_entrante.en_hueco = True
+            fragmento = lwp_entrante.fragmentos.pop(-1)
+            fragmento.hueco += tiempo_vacio
+            lwp_entrante.total_hueco += tiempo_vacio
+            lwp_entrante.fragmentos.append(fragmento)
+        else:
+            # Una entrada normal ya no estamos en hueco
+            lwp_entrante.en_hueco = False
+            lwp_entrante.latency = muestra.ts - lwp_entrante.last_wakeup
                 
-        # Actualizamos campos comunes
-        lwp_entrante.last_sched_in = muestra.ts
-        lwp_entrante.activo = True
-        lwp_entrante.last_sched_out = Timestamp(0,0)
+    # Actualizamos campos comunes
+    lwp_entrante.last_sched_in = muestra.ts
+    lwp_entrante.activo = True
+    lwp_entrante.last_sched_out = Timestamp(0,0)
     
 
 # sched_wakeup tiene los siguientes params:
@@ -448,22 +436,24 @@ def procesa_sched_switch(muestra):
 
 def procesa_sched_wakeup(muestra):
 
-    if not muestra.param["pid"] in res.lwp_dico:
+    pid_wakeup = int(muestra.param["pid"])
+
+    if not pid_wakeup in res.lwp_dico:
         # Nuevo PID que se despierta
         lwp_wakeup = Lwp_data()
-        lwp_wakeup.pid = muestra.param["pid"]
+        lwp_wakeup.pid = pid_wakeup
         lwp_wakeup.basecmd = muestra.param["comm"]
 
-        res.lwp_dico[muestra.param["pid"]] = lwp_wakeup
+        res.lwp_dico[pid_wakeup] = lwp_wakeup
     else:
-        lwp_wakeup = res.lwp_dico[muestra.param["pid"]]
+        lwp_wakeup = res.lwp_dico[pid_wakeup]
         
         # Sanity check
         if lwp_wakeup.basecmd != muestra.param["comm"] :
-            exit_error_logico(muestra, muestra.param["pid"], "sched_wakeup shows a different basecmd")
+            warning_error_logico(muestra, pid_wakeup, "sched_wakeup shows a different basecmd")
 
         if lwp_wakeup.last_sched_in != Timestamp(0,0):
-            exit_error_logico
+            warning_error_logico(muestra, pid_wakeup, "sched_in y sched_wakeup sin sched_out en medio")
 
     lwp_wakeup.last_wakeup = muestra.ts
 
@@ -490,9 +480,9 @@ def exit_error_linea(nr_linea, ts_str, mensaje):
 
     
              
-def exit_error_logico(muestra, pid, mensaje):
-    print "Linea " + str(muestra.nr_linea) + " TS: " + muestra.ts_str + "PID: " + str(pid) + ": " + mensaje
-
+def warning_error_logico(muestra, pid, mensaje):
+    print "WARNING: Linea " + str(muestra.nr_linea) + " TS: " + muestra.ts_str + "PID: " + str(pid) + ": " + mensaje
+    
 
 
 if __name__ == '__main__':

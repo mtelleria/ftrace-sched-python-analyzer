@@ -44,7 +44,9 @@ class Timestamp:
 
     def __init__(self, sg=0, us=0, string=""):
         if string != "":
-            [self.sg, self.us] = string.split('.')
+            [sg_str, us_str] = string.split('.')
+            self.sg = int(sg_str)
+            self.us = int(us_str)
         else:
             self.sg = sg
             self.us = us
@@ -177,8 +179,8 @@ def main():
         bloque_ts = bloques[2]
         ts_str = bloque_ts[0:-1]
         
-        if result.ts_first.sg == 0:
-            result.ts_first = Timestamp(string=ts_str)
+        if res.ts_first.sg == 0:
+            res.ts_first = Timestamp(string=ts_str)
 
         # El 4o bloque es el evento que ademas tiene un : al final
         bloque_evento = bloques[3]
@@ -215,7 +217,7 @@ def main():
         muestra.evento = evento
         muestra.subsys = subsys
         muestra.ts = Timestamp()
-        muestra.ts = Timestamp(string=ts_str) - result.ts_first
+        muestra.ts = Timestamp(string=ts_str) - res.ts_first
 
         # Bloque PID  ej:  trace-cmd-20674
         [muestra.basecmd, separador, muestra.pid] = bloques[0].rpartition('-')
@@ -226,6 +228,24 @@ def main():
         cpu_str = bloques[1]
         muestra.cpu = int(cpu_str[1:-1])
         muestra.param = equal_asignments_to_dico(bloques[4:])
+        
+        # Problema con la IDLE-task (swapper).  Es una tarea especial ya que:
+        #
+        # -  Tiene 2 basecmd:  <idle> y swapper/0, swapper/1, swapper/2
+        # -  Puede ejecutar en varias CPU's A LA VEZ (ya que no ejecuta nada)
+        # -  Las swapper de todos los cores comparten el mismo PID
+        #
+        # DECISION:  Cambiar el PID a:
+        # -  swapper/0 --> 0
+        # -  swapper/1 --> -1
+        # -  swapper/2 --> -2
+        #
+        # En nuestro programa, swapper es el único lwp que cambia de PID cuando
+        # pasa a otra CPU.
+
+        if muestra.pid == 0 :
+            muestra.pid = -1 * muestra.cpu
+            muestra.basecmd = "swapper/" + str(muestra.cpu)
         
         muestra.escribe()
         
@@ -256,8 +276,17 @@ def main():
 # ------------------------------------------    
 def procesa_sched_switch(muestra):
     
-    pid_saliente = muestra.param.prev_pid
-    pid_entrante = muestra.param.next_pid
+    pid_saliente = muestra.param["prev_pid"]
+    if pid_saliente == 0 :
+        pid_saliente = -1*muestra.cpu
+
+    pid_entrante = muestra.param["next_pid"]
+    if pid_entrante == 0 :
+        pid_entrante = -1*muestra.cpu
+
+
+    # Hacemos la conversion de PID de swapper/idle
+
 
     # Tratamiento del PID saliente #
     # -----------------------------#
@@ -265,18 +294,18 @@ def procesa_sched_switch(muestra):
         # Nuevo PID saliente
         lwp_saliente = Lwp_data() # Esto pone por defecto todo a 0
 
-        lwp_saliente.pid = muestra.param.prev_pid
-        lwp_saliente.basecmd = muestra.param.prev_comm
+        lwp_saliente.pid = pid_saliente
+        lwp_saliente.basecmd = muestra.param["prev_comm"]
 
-        lwp_saliente.state = glb.state_num_to_char[muestra.param.prev_state]
+        lwp_saliente.state = glb.state_num_to_char[muestra.param["prev_state"]]
         lwp_saliente.active = False
         
         lwp_saliente.last_sched_out = muestra.ts
-        lwp_saliente.last_wakeup = new Timestamp()
-        lwp_saliente.last_sched_in = new Timestamp()
+        lwp_saliente.last_wakeup = Timestamp()
+        lwp_saliente.last_sched_in = Timestamp()
         lwp_saliente.last_sched_out = muestra.ts
-        lwp_saliente.total_exec = new Timestamp()
-        lwp_saliente.total_hueco = new Timestamp()
+        lwp_saliente.total_exec = Timestamp()
+        lwp_saliente.total_hueco = Timestamp()
 
         res.lwp_dico[pid_saliente] = lwp_saliente
 
@@ -285,9 +314,9 @@ def procesa_sched_switch(muestra):
 
         # Sanity checks
         # -------------
-        if lwp_saliente.basecmd != muestra.param.prev_comm:
+        if lwp_saliente.basecmd != muestra.param["prev_comm"]:
             exit_error_logico(muestra, pid_saliente, "nuevo basecmdline, anterior: " 
-                              + lwp_saliente.basecmd + " nuevo: " + muestra.param.prev_comm)
+                              + lwp_saliente.basecmd + " nuevo: " + muestra.param["prev_comm"])
 
         if lwp_saliente.last_sched_in == Timestamp(0,0):
             exit_error_logico(muestra, pid_saliente, "tiene 2 sched_out sin ningun sched_in")
@@ -340,7 +369,7 @@ def procesa_sched_switch(muestra):
         lwp_saliente.last_sched_out = muestra.ts
         lwp_saliente.last_sched_in = Timestamp(0,0)
         lwp_saliente.active = False
-        lwp_saliente.state = glb.state_num_to_char[muestra.param.prev_state]
+        lwp_saliente.state = glb.state_num_to_char[muestra.param["prev_state"]]
 
     # Tratamiento del PID entrante #
     # -----------------------------#
@@ -352,8 +381,8 @@ def procesa_sched_switch(muestra):
     if not pid_entrante in res.lwp_dico:
         # Nuevo pid entrante.  Estado nuevo
         lwp_entrante = Lwp_data()
-        lwp_entrante.pid = muestra.param.next_pid
-        lwp_entrante.basecmd = muestra.param.next_comm
+        lwp_entrante.pid = pid_entrante
+        lwp_entrante.basecmd = muestra.param["next_comm"]
 
         lwp_entrante.active = True
         lwp_entrante.last_sched_in = muestra.ts
@@ -365,6 +394,7 @@ def procesa_sched_switch(muestra):
         # Sanity checks
         if lwp_entrante.active :
             exit_error_logico(muestra, pid_entrante, " tiene 1 sched_in estando ya activo")
+        
         
         if lwp_entrante.last_sched_out != Timestamp(0,0) and lwp_entrante.last_wakeup == Timestamp(0,0):
             exit_error_logico(muestra, pid_entrante, "tiene un periodo sched_out y sched_in sin wakeup en medio")
@@ -418,19 +448,22 @@ def procesa_sched_switch(muestra):
 
 def procesa_sched_wakeup(muestra):
 
-    if not muestra.param.pid in res.lwp_dico:
+    if not muestra.param["pid"] in res.lwp_dico:
         # Nuevo PID que se despierta
         lwp_wakeup = Lwp_data()
-        lwp_wakeup.pid = muestra.param.pid
-        lwp_wakeup.basecmd = muestra.param.conn
+        lwp_wakeup.pid = muestra.param["pid"]
+        lwp_wakeup.basecmd = muestra.param["conn"]
 
-        res.lwp.dico[muestra.param.pid] = lwp_wakeup
+        res.lwp.dico[muestra.param["pid"]] = lwp_wakeup
     else:
-        lwp_wakeup = res.lwp_dico[muestra.param.pid]
+        lwp_wakeup = res.lwp_dico[muestra.param["pid"]]
         
         # Sanity check
-        if lwp_wakeup.basecmd != muestra.param.comm :
-            exit_error_logico(muestra, muestra.param.pid, "sched_wakeup shows a different basecmd")
+        if lwp_wakeup.basecmd != muestra.param["comm"] :
+            exit_error_logico(muestra, muestra.param["pid"], "sched_wakeup shows a different basecmd")
+
+        if lwp_wakeup.last_sched_in != Timestamp(0,0):
+            exit_error_logico
 
     lwp_wakeup.last_wakeup = muestra.ts
 

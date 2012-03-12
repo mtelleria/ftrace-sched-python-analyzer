@@ -60,8 +60,11 @@ class Timestamp:
         return otro
 
     def to_msg(self):
+        ms_int = self.sg*1000 + self.us/1000
+        ms_frac = self.us % 1000
+        res = "%d.%03d" % (ms_int, ms_frac)
 #        return int(self.sg * 1000 + self.us/1000)
-        return self.us
+        return res
 
     def __cmp__(self, other):
         sg_cmp = cmp(self.sg, other.sg)
@@ -466,6 +469,8 @@ def procesa_sched_migrate_task(muestra):
     print "nr_linea: " + str(muestra.nr_linea) + " ts_str " + muestra.ts_str + " linea: " + muestra.linea
 
 
+# -------------------------------------------------------------------------------------
+
 def imprime_resultados():
 
     for pid in sorted (res.lwp_dico.keys()) :
@@ -473,21 +478,21 @@ def imprime_resultados():
         print "Estadisticas de PID %d basename %s" % (lwp.pid, lwp.basecmd)
         print "-----------------------------------------"
         print
-        print "N Frag  Comienzo ms  Duracion ms   CPUs   Hueco us   Separacion  Latencia "
+        print "%10s %10s %10s %10s %10s %10s %10s" % ("N Frag", "Start_ms", "Durac_ms", "CPUs", 
+                                                      "Hueco_us", "Separ_ms", "Laten_ms")
         contador = 0
         for fragmento in lwp.fragmentos:
             contador += 1
-            comienzo_msg = fragmento.comienzo.to_msg()
-            duracion_msg = fragmento.duracion.to_msg()
-            print "%d   %d   %d   " % ( contador, comienzo_msg, duracion_msg), 
+            comienzo_ms = fragmento.comienzo.to_msg()
+            duracion_ms = fragmento.duracion.to_msg()
+            CPUs = ' '.join( map(str, fragmento.cpus))
+            hueco_ms = fragmento.hueco.to_msg()
+            separacion_ms = fragmento.separacion.to_msg()
+            latency_ms = fragmento.latency.to_msg()
+            
+            print "%10s %10s %10s %10s %10s %10s %10s" % (contador, comienzo_ms, duracion_ms, CPUs,
+                                                          hueco_ms, separacion_ms, latency_ms)
 
-            for cpu in fragmento.cpus:
-                print "%d " % cpu,
-            hueco_msg = fragmento.hueco.to_msg()
-            separacion_msg = fragmento.separacion.to_msg()
-            latency_msg = fragmento.latency.to_msg()
-            print " %d  %d %d " % (hueco_msg, separacion_msg, latency_msg)
-        
         print
         print
 

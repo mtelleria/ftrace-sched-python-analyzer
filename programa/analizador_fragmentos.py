@@ -20,6 +20,7 @@ class inp:
     report_filename = 'report.txt'
     first_record = -1
     last_record = -1
+#    granularity = 5
     granularity = 30
 
 class glb:
@@ -59,8 +60,8 @@ class Timestamp:
         return otro
 
     def to_msg(self):
-        return int(self.sg * 1000 + self.us/1000)
-#        return self.us
+#        return int(self.sg * 1000 + self.us/1000)
+        return self.us
 
     def __cmp__(self, other):
         sg_cmp = cmp(self.sg, other.sg)
@@ -265,29 +266,7 @@ def main():
             exit_error_linea(nr_linea, ts_str, "Error evento " + evento + " no soportado")
 
     # PRINT RESULT
-    for pid in sorted (res.lwp_dico.keys()) :
-        lwp = res.lwp_dico[pid]
-        print "Estadisticas de PID %d basename %s" % (lwp.pid, lwp.basecmd)
-        print "-----------------------------------------"
-        print
-        print "N Frag  Comienzo ms  Duracion ms   CPUs   Hueco us   Separacion  Latencia "
-        contador = 0
-        for fragmento in lwp.fragmentos:
-            contador += 1
-            comienzo_msg = fragmento.comienzo.to_msg()
-            duracion_msg = fragmento.comienzo.to_msg()
-            print "%d   %d   %d   " % ( contador, comienzo_msg, duracion_msg), 
-
-            for cpu in fragmento.cpus:
-                print "%d " % cpu,
-            hueco_msg = fragmento.hueco.to_msg()
-            separacion_msg = fragmento.separacion.to_msg()
-            latency_msg = fragmento.latency.to_msg()
-            print " %d  %d %d " % (hueco_msg, separacion_msg, latency_msg)
-        
-        print
-        print
-
+    imprime_resultados()
             
 
 # -------------------------------------
@@ -485,6 +464,36 @@ def procesa_sched_wakeup(muestra):
 def procesa_sched_migrate_task(muestra):
     print "Procesando sched_migrate_task con",
     print "nr_linea: " + str(muestra.nr_linea) + " ts_str " + muestra.ts_str + " linea: " + muestra.linea
+
+
+def imprime_resultados():
+
+    for pid in sorted (res.lwp_dico.keys()) :
+        lwp = res.lwp_dico[pid]
+        print "Estadisticas de PID %d basename %s" % (lwp.pid, lwp.basecmd)
+        print "-----------------------------------------"
+        print
+        print "N Frag  Comienzo ms  Duracion ms   CPUs   Hueco us   Separacion  Latencia "
+        contador = 0
+        for fragmento in lwp.fragmentos:
+            contador += 1
+            comienzo_msg = fragmento.comienzo.to_msg()
+            duracion_msg = fragmento.duracion.to_msg()
+            print "%d   %d   %d   " % ( contador, comienzo_msg, duracion_msg), 
+
+            for cpu in fragmento.cpus:
+                print "%d " % cpu,
+            hueco_msg = fragmento.hueco.to_msg()
+            separacion_msg = fragmento.separacion.to_msg()
+            latency_msg = fragmento.latency.to_msg()
+            print " %d  %d %d " % (hueco_msg, separacion_msg, latency_msg)
+        
+        print
+        print
+
+
+
+
 
 
 # ----------------------------------------

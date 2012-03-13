@@ -63,7 +63,6 @@ class Timestamp:
         ms_int = self.sg*1000 + self.us/1000
         ms_frac = self.us % 1000
         res = "%d.%03d" % (ms_int, ms_frac)
-#        return int(self.sg * 1000 + self.us/1000)
         return res
 
     def __cmp__(self, other):
@@ -101,8 +100,9 @@ class Timestamp:
         
 class res:
     lwp_dico = {}
-    cpus = []
+    cpu_dico = {}
     ts_first = Timestamp()
+    ts_last = Timestamp()
 
 class Muestra:
     def __init__(self):
@@ -122,16 +122,15 @@ class Muestra:
                " ts: " + str(self.ts.sg) + "." + str(self.ts.us) + " basecmd: " + self.basecmd,
                " pid: " + str(self.pid) + " CPU " + str(self.cpu) + " param: " + str(self.param) )
     
-
-
 class Fragmento:
     def __init__(self):
         self.comienzo = Timestamp()
         self.duracion = Timestamp()
         self.cpus = [ ]
         self.hueco = Timestamp()
+        self.max_hueco = Timestamp()
         self.separacion = Timestamp()
-        self.latency = Timestamp()
+        self.latencia = Timestamp()
         self.pid = 0
 
 class Lwp_data:
@@ -153,11 +152,17 @@ class Lwp_data:
         self.last_sched_out = Timestamp(0, 0)
 
         self.fragmentos = []
+        self.total_exec = {} # Index by CPU
 
-        self.total_exec = Timestamp(0, 0)
-        self.total_hueco = Timestamp(0, 0)
+        for cpuid in res.cpu_dico.keys() :
+            self.total_exec[cpuid] = Timestamp(0, 0)
     
-
+class Cpu_data:
+    def __init__(self, cpuid = 0) :
+        self.cpuid = cpuid
+        self.total_exec = Timestamp(0, 0)
+        self.total_idle = Timestamp(0, 0)
+        self.nr_sched_switch = 0
 
 def main():
     
@@ -235,6 +240,9 @@ def main():
         # Bloque CPU  ej: [001]
         cpu_str = bloques[1]
         muestra.cpu = int(cpu_str[1:-1])
+        if not muestra.cpu in res.cpu_dico :
+            nueva_cpu(muestra.cpu)
+
         muestra.param = equal_asignments_to_dico(bloques[4:])
         
         # Problema con la IDLE-task (swapper).  Es una tarea especial ya que:
@@ -256,8 +264,6 @@ def main():
             muestra.basecmd = "swapper/" + str(muestra.cpu)
         
         #muestra.escribe()
-        
-
 
         if evento == 'sched_switch':
             procesa_sched_switch(muestra)
@@ -271,6 +277,22 @@ def main():
     # PRINT RESULT
     imprime_resultados()
             
+# Esta funcion se llama en cuanto se descubre una nueva CPU en
+# la traza.  En concreto se llama antes de procesar esa linea de
+# la traza.
+def nueva_cpu(cpuid) :
+    # Cuando vemos una nueva CPU hacemos 2 cosas:
+    # -  Una:  Agnadirla a res.cpu_dico
+    # -  Dos:  A cada lwp agandir un indice a total_exec
+    cpu_data = Cpu_data(cpuid)
+    res.cpu_dico[cpuid] = cpu_data
+
+    # Agnadimos una nueva clave en la total_exec de los lwp
+    for lwp in res.lwp_dico.values():
+        lwp.total_exec[cpuid] = Timestamp(0,0)
+    
+
+
 
 # -------------------------------------
 
@@ -286,6 +308,7 @@ def main():
 # ------------------------------------------    
 def procesa_sched_switch(muestra):
     
+    # Hacemos la conversion de PID de swapper/idle
     pid_saliente = int(muestra.param["prev_pid"])
     if pid_saliente == 0 :
         pid_saliente = -1*muestra.cpu
@@ -294,14 +317,20 @@ def procesa_sched_switch(muestra):
     if pid_entrante == 0 :
         pid_entrante = -1*muestra.cpu
 
+    procesa_sched_out(pid_saliente, muestra)
+    procesa_sched_in(pid_entrante, muestra)
+    res.cpu_dico[muestra.cpu].nr_sched_switch += 1
 
-    # Hacemos la conversion de PID de swapper/idle
+# -----------------------------------------------------------
 
+def procesa_sched_out(pid_saliente, muestra):
 
     # Tratamiento del PID saliente #
     # -----------------------------#
     if not pid_saliente in res.lwp_dico:
-        # Nuevo PID saliente
+        # Nuevo PID saliente.  Esto sólo puede pasar al principio, con los threads
+        # que se ejecutan en las CPU's en el momento de activar la traza.
+
         lwp_saliente = Lwp_data() # Esto pone por defecto todo a 0
 
         lwp_saliente.pid = pid_saliente
@@ -335,7 +364,8 @@ def procesa_sched_switch(muestra):
             # Tenemos un nuevo fragmento !!
             fragmento = Fragmento()
             fragmento.comienzo = lwp_saliente.last_sched_in
-            fragmento.latency = fragmento.comienzo - lwp_saliente.last_wakeup
+            if pid_saliente > 0 :
+                fragmento.latencia = fragmento.comienzo - lwp_saliente.last_wakeup
 
             if len(lwp_saliente.fragmentos) > 0:
                 fragmento_previo = lwp_saliente.fragmentos[-1]
@@ -358,17 +388,26 @@ def procesa_sched_switch(muestra):
         lwp_saliente.fragmentos.append(fragmento)
 
         # Actualizamos datos del LWP
-        lwp_saliente.total_exec += (muestra.ts - lwp_saliente.last_sched_in)
+        chunk_exec = muestra.ts - lwp_saliente.last_sched_in
+        lwp_saliente.total_exec[muestra.cpu] += chunk_exec
         lwp_saliente.last_sched_in = Timestamp(0,0)
         lwp_saliente.last_wakeup = Timestamp(0,0)
         
+        if pid_saliente > 0 :
+            res.cpu_dico[muestra.cpu].total_exec += chunk_exec
+        else:
+            res.cpu_dico[muestra.cpu].total_idle += chunk_exec
+
+
     # Acciones comunes para LWP nuevos y los conocidos
     lwp_saliente.last_sched_out = muestra.ts
     lwp_saliente.activo = False
     lwp_saliente.state = glb.state_num_to_char[muestra.param["prev_state"]]
 
-    # Tratamiento del PID entrante #
-    # -----------------------------#
+
+# ------------------------------------------------------------
+
+def procesa_sched_in(pid_entrante, muestra):
 
     # Podemos estar en 3 estados:
     # -  Primer fragmento:  No hay last_sched_out, puede haber (o no) last_wakeup
@@ -408,11 +447,13 @@ def procesa_sched_switch(muestra):
     if lwp_entrante.last_sched_out == Timestamp(0,0):
         # Primer arranque
         if lwp_entrante.last_wakeup != Timestamp(0,0):
-            lwp_entrante.latency = muestra.ts - lwp_entrante.last_wakeup
+            lwp_entrante.latencia = muestra.ts - lwp_entrante.last_wakeup
         else:
-            lwp_entrante.latency = Timestamp(0,-1) # Signalling that first latency is missing
+            # Nota:  Esto tambien incluye los idle/swapper
+            lwp_entrante.latencia = Timestamp(0, 0) # Signalling that first latency is missing
 
     else:
+        # Ya no es el primer arranque
         tiempo_vacio = muestra.ts - lwp_entrante.last_sched_out
 
         if (tiempo_vacio < inp.granularity):
@@ -420,18 +461,23 @@ def procesa_sched_switch(muestra):
             lwp_entrante.en_hueco = True
             fragmento = lwp_entrante.fragmentos.pop(-1)
             fragmento.hueco += tiempo_vacio
-            lwp_entrante.total_hueco += tiempo_vacio
+            if tiempo_vacio > fragmento.max_hueco :
+                fragmento.max_hueco = tiempo_vacio
             lwp_entrante.fragmentos.append(fragmento)
         else:
             # Una entrada normal ya no estamos en hueco
             lwp_entrante.en_hueco = False
-            lwp_entrante.latency = muestra.ts - lwp_entrante.last_wakeup
+
+            # Los PIDs de idle no tienen sched_wakeup
+            if pid_entrante > 0 :
+                lwp_entrante.latencia = muestra.ts - lwp_entrante.last_wakeup
                 
     # Actualizamos campos comunes
     lwp_entrante.last_sched_in = muestra.ts
     lwp_entrante.activo = True
     lwp_entrante.last_sched_out = Timestamp(0,0)
     
+
 
 # sched_wakeup tiene los siguientes params:
 #
@@ -469,6 +515,8 @@ def procesa_sched_migrate_task(muestra):
     print "nr_linea: " + str(muestra.nr_linea) + " ts_str " + muestra.ts_str + " linea: " + muestra.linea
 
 
+
+
 # -------------------------------------------------------------------------------------
 
 def imprime_resultados():
@@ -478,20 +526,21 @@ def imprime_resultados():
         print "Estadisticas de PID %d basename %s" % (lwp.pid, lwp.basecmd)
         print "-----------------------------------------"
         print
-        print "%10s %10s %10s %10s %10s %10s %10s" % ("N Frag", "Start_ms", "Durac_ms", "CPUs", 
-                                                      "Hueco_us", "Separ_ms", "Laten_ms")
+        print "%10s %10s %10s %10s %10s %10s %10s %10s" % ("N Frag", "Start_ms", "Durac_ms", "CPUs", 
+                                                           "Hueco_us", "Separ_ms", "Max_Hueco_us", "Laten_ms")
         contador = 0
         for fragmento in lwp.fragmentos:
             contador += 1
             comienzo_ms = fragmento.comienzo.to_msg()
             duracion_ms = fragmento.duracion.to_msg()
             CPUs = ' '.join( map(str, fragmento.cpus))
-            hueco_ms = fragmento.hueco.to_msg()
+            hueco_us = fragmento.hueco.us
             separacion_ms = fragmento.separacion.to_msg()
-            latency_ms = fragmento.latency.to_msg()
+            max_hueco_us = fragmento.max_hueco.us
+            latencia_ms = fragmento.latencia.to_msg()
             
-            print "%10s %10s %10s %10s %10s %10s %10s" % (contador, comienzo_ms, duracion_ms, CPUs,
-                                                          hueco_ms, separacion_ms, latency_ms)
+            print "%10s %10s %10s %10s %10s %10s %10s %10s" % (contador, comienzo_ms, duracion_ms, CPUs,
+                                                               hueco_us, separacion_ms, max_hueco_us, latencia_ms)
 
         print
         print

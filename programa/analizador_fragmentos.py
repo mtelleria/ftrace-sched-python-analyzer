@@ -535,7 +535,10 @@ def imprime_resultados():
 
     # Resultados globales
     # -------------------
-    print "Fichero: %s   ts_init: %s,  ts_last: %s,  duracion: %s"
+    duracion_total = res.ts_last - res.ts_first
+    print "Fichero: %s   ts_init: %s,  ts_last: %s,  duracion: %s" % (
+          inp.report_filename, res.ts_first.to_msg(), res.ts_last.to_msg(), duracion_total.to_msg() )
+
     print "CPUs totales: %d   PID totales: %d"
 
 

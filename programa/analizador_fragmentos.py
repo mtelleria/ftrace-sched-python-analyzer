@@ -17,7 +17,8 @@ import sys
 #   BLOQUE-PROCESO-EJECUTANDO  [CPU] TIMESTAMP:  EVENTO:  PAR1=VAL1 PAR2=VAL2 PAR3=VAL3 ...
 #
 class inp:
-    report_filename = 'report.txt'
+#    report_filename = 'report.txt'
+    report_filename = 'trace_cte_report.txt'
     first_record = -1
     last_record = -1
 #    granularity = 5
@@ -227,7 +228,7 @@ def main():
         # Eventos del subsistema que no son conocidos generan un warning
         if not evento in glb.processed_events:
             
-            print ("WARNING: Linea " + str(nr_linea) + " Timestamp = " + ts_str,
+            print "%s%s" % ("WARNING: Linea " + str(nr_linea) + " Timestamp = " + ts_str,
                    " evento " + evento + " no esperado pero ignorado")
             continue
 
@@ -523,8 +524,9 @@ def procesa_sched_wakeup(muestra):
     lwp_wakeup.last_wakeup = muestra.ts
 
 def procesa_sched_migrate_task(muestra):
-    print "Procesando sched_migrate_task con",
-    print "nr_linea: " + str(muestra.nr_linea) + " ts_str " + muestra.ts_str + " linea: " + muestra.linea
+    pass
+#    print "Procesando sched_migrate_task con",
+#    print "nr_linea: " + str(muestra.nr_linea) + " ts_str " + muestra.ts_str + " linea: " + muestra.linea
 
 
 
@@ -536,12 +538,14 @@ def imprime_resultados():
     # Resultados globales
     # -------------------
     duracion_total = res.ts_last - res.ts_first
-    print "Fichero: %s   ts_init: %s,  ts_last: %s,  duracion: %s" % (
+    print
+    print "Fichero: %s   ts_init: %s,  ts_last: %s,  duracion (ms): %s" % (
           inp.report_filename, res.ts_first.to_msg(), res.ts_last.to_msg(), duracion_total.to_msg() )
 
-    print "CPUs totales: %d   PID totales: %d"
-
-
+    print "CPUs totales: %d   PID totales: %d" % ( len(res.cpu_dico), len(res.lwp_dico) )
+    print
+    print
+    
     # Resultados por LWP
     # ------------------
     for pid in sorted (res.lwp_dico.keys()) :
@@ -613,10 +617,6 @@ def imprime_resultados():
 
 
 
-
-
-
-
 # ----------------------------------------
 
 def equal_asignments_to_dico(props):
@@ -636,7 +636,7 @@ def exit_error_linea(nr_linea, ts_str, mensaje):
     
              
 def warning_error_logico(muestra, pid, mensaje):
-    print "WARNING: Linea " + str(muestra.nr_linea) + " TS: " + muestra.ts_str + "PID: " + str(pid) + ": " + mensaje
+    print "WARNING: Linea " + str(muestra.nr_linea) + " TS: " + muestra.ts_str + " PID: " + str(pid) + ": " + mensaje
     
 
 

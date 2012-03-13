@@ -533,12 +533,17 @@ def procesa_sched_migrate_task(muestra):
 
 def imprime_resultados():
 
+    # Resultados globales
+    # -------------------
+    print "Fichero: %s   ts_init: %s,  ts_last: %s,  duracion: %s"
+    print "CPUs totales: %d   PID totales: %d"
+
+
+    # Resultados por LWP
+    # ------------------
     for pid in sorted (res.lwp_dico.keys()) :
         lwp = res.lwp_dico[pid]
 
-        # LWP que no han completado un fragmento son ignorados
-        if len(lwp.fragmentos) == 0 :
-            continue
 
         # Listado de fragmentos
         print "Estadisticas de PID %d basename %s" % (lwp.pid, lwp.basecmd)
@@ -546,6 +551,12 @@ def imprime_resultados():
         print
         print "%10s %10s %10s %10s %10s %10s %10s %10s" % ("N Frag", "Start_ms", "Durac_ms", "CPUs", 
                                                            "Hueco_us", "Separ_ms", "Max_Hueco_us", "Laten_ms")
+
+        # LWP que no han completado un fragmento son ignorados
+        if len(lwp.fragmentos) == 0 :
+            print "PID sin fragmentos completados"
+            continue
+
         contador = 0
         for fragmento in lwp.fragmentos:
             contador += 1
@@ -581,6 +592,22 @@ def imprime_resultados():
         
         # Dejamos una linea de separacion
         print
+
+        
+    # Dejamos 2 lineas de separacion
+    print
+    print
+
+    # Resultados por CPU
+    for cpu in res.cpu_dico.values() :
+        duracion = cpu.total_exec + cpu.total_idle
+        pcrg_ocupado = 100.0*cpu.total_exec.to_us()/duracion.to_us()
+
+        print "CPU %d:  Total exec:  %s    Total_idle:  %s   Duraction %s   Pctg_ocupado: %f" % (cpu.cpuid,
+            cpu.total_exec.to_msg(), cpu.total_idle.to_msg(), duracion.to_msg(), pcrg_ocupado)
+
+        print
+
 
 
 

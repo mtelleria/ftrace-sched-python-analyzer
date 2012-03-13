@@ -3,19 +3,36 @@
 
 import sys
 
-# El fichero de texto se ha de generar de la forma
+# Analizador de fragmentos de trace-cmd
 #
-#      trace-cmd report -r -i <fichero.dat> > report.txt
+# Opciones:
 #
-# La opción -r deshabilita los "plugins" que por defecto formatean 
-# algunos eventos (ver el output de trace-cmd report -V).
+# --info               Da solo datos generales del fichero (inicio, final, duracion,
+#                      nr_pids, nr_cpus)
 #
-# De esta forma todas las lineas tienen el mismo output
-# independientemente del tipo de evento que sea.  Separando por
-# espacios se obtiene:
+# --info_pids          Lista los pids y basecmds
 #
-#   BLOQUE-PROCESO-EJECUTANDO  [CPU] TIMESTAMP:  EVENTO:  PAR1=VAL1 PAR2=VAL2 PAR3=VAL3 ...
+# --file               Fichero de entrada.  Por defecto trace.dat
+# --nobinfile          El fichero de entrada ya es de texto
+#                      -  Incluye keep-text = True
+# --keep-text          Mantiene el fichero de texto generado
 #
+#
+# --pids=pid1,pid2,..  Procesa únicamente estos PIDs (por defecto todos)
+#                      Si se da un PID por defecto process_idle is false
+# --process_idle       Procesa también las idle-task (swapper)
+# --cpus=cpu0, cpu1... Procesa únicamente estas CPU's
+#
+# --from_rel_ts_ms     Tiempo de inicio relativo en milisg
+# --to_rel_ts_ms       Tiempo de final relativo en milisg
+# --from_abs_ts_str    Tiempo inicial en timestamps_str
+# --to_abs_ts_str      Tiempo_final en timestamps_str
+# --from_linenr        Desde el numero de linea
+# --to_linenr          Hasta el numero de linea
+#
+# --granularity_us     Granularidad
+
+
 class inp:
 #    report_filename = 'report.txt'
     report_filename = 'trace_cte_report.txt'
@@ -47,8 +64,6 @@ class glb:
     # Obtenido de trace-cmd --events | less (y buscando sched_switch)
     state_num_to_char = {"0x0":'R', "0x1":'S', "0x2":"D", "0x4":"T", "0x8":"t", "0x10":"Z", 
                          "0x20":"X", "0x40":"x", "0x80":"W"}
-
-
 
 class Timestamp:
 
@@ -170,7 +185,47 @@ class Cpu_data:
         self.total_idle = Timestamp(0, 0)
         self.nr_sched_switch = 0
 
+
+# Aqui se lleva todo
+
+
 def main():
+
+
+    parsea_fichero()
+    # PRINT RESULT
+    imprime_resultados()
+
+
+#
+# lanza_trace_cmd_report()
+#
+# El fichero de texto se ha de generar de la forma
+#
+#      trace-cmd report -r -i <fichero.dat> > report.txt
+#
+# La opción -r deshabilita los "plugins" que por defecto formatean 
+# algunos eventos (ver el output de trace-cmd report -V).
+#
+# De esta forma todas las lineas tienen el mismo output
+# independientemente del tipo de evento que sea.
+# --------------------------------------------------------------
+def lanza_trace_cmd_report():
+    pass
+
+
+#
+# parsea_fichero()
+#
+# Esta funcion abre el fichero de texto report ya generado y parsea
+# las lineas llamando a diferentes funciones por cada evento
+#
+# Separando por espacios se obtiene:
+#
+#   BLOQUE-PROCESO-EJECUTANDO  [CPU] TIMESTAMP:  EVENTO:  PAR1=VAL1 PAR2=VAL2 PAR3=VAL3 ...
+
+# -----------------------------------------------------------------
+def parsea_fichero():
     
     inp.granularity = Timestamp(0, inp.granularity)
     report_file = open(inp.report_filename)
@@ -287,8 +342,6 @@ def main():
         else:
             exit_error_linea(nr_linea, ts_str, "Error evento " + evento + " no soportado")
 
-    # PRINT RESULT
-    imprime_resultados()
             
 # Esta funcion se llama en cuanto se descubre una nueva CPU en
 # la traza.  En concreto se llama antes de procesar esa linea de
@@ -535,8 +588,8 @@ def procesa_sched_migrate_task(muestra):
 
 def imprime_resultados():
 
-    # Resultados globales
-    # -------------------
+    # Resultados globales de la traza
+    # -------------------------------
     duracion_total = res.ts_last - res.ts_first
     print
     print "Fichero: %s   ts_init: %s,  ts_last: %s,  duracion (ms): %s" % (
@@ -544,8 +597,12 @@ def imprime_resultados():
 
     print "CPUs totales: %d   PID totales: %d" % ( len(res.cpu_dico), len(res.lwp_dico) )
     print
-    print
+
     
+    # Datos de entrada
+    # ----------------
+    print "Granularidad us: %d " % (inp.granularity.us )
+
     # Resultados por LWP
     # ------------------
     for pid in sorted (res.lwp_dico.keys()) :

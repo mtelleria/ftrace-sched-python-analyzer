@@ -23,6 +23,13 @@ class inp:
 #    granularity = 5
     granularity = 30
 
+class res:
+    lwp_dico = {}
+    cpu_dico = {}
+    ts_first = None # Timestamp absoluto
+    ts_last = None # Timestamp absoluto
+
+
 class glb:
     # Eventos que no pertenezcan a estos subsistemas son filtrados
     accepted_subsystems = ['sched']
@@ -39,6 +46,7 @@ class glb:
     # Obtenido de trace-cmd --events | less (y buscando sched_switch)
     state_num_to_char = {"0x0":'R', "0x1":'S', "0x2":"D", "0x4":"T", "0x8":"t", "0x10":"Z", 
                          "0x20":"X", "0x40":"x", "0x80":"W"}
+
 
 
 class Timestamp:
@@ -64,6 +72,9 @@ class Timestamp:
         ms_frac = self.us % 1000
         res = "%d.%03d" % (ms_int, ms_frac)
         return res
+
+    def to_us(self):
+        return self.us + self.sg*1000000
 
     def __cmp__(self, other):
         sg_cmp = cmp(self.sg, other.sg)
@@ -98,11 +109,6 @@ class Timestamp:
         return res
 
         
-class res:
-    lwp_dico = {}
-    cpu_dico = {}
-    ts_first = Timestamp()
-    ts_last = Timestamp()
 
 class Muestra:
     def __init__(self):
@@ -139,7 +145,6 @@ class Lwp_data:
         # Estaticos
         self.basecmd = ""
         self.pid = 0
-
         # Dinamicos
         self.state = "S"
     
@@ -190,9 +195,16 @@ def main():
 
         bloque_ts = bloques[2]
         ts_str = bloque_ts[0:-1]
-        
-        if res.ts_first.sg == 0:
-            res.ts_first = Timestamp(string=ts_str)
+        ts = Timestamp(string=ts_str)
+
+        if type(res.ts_first) == type(None) :
+            res.ts_first = ts
+            res.ts_last = ts
+        else :
+            if ts < res.ts_last :
+                exit_error_linea(nr_linea, ts_str, "Timestamp decreciente respecto a linea anterior")
+            res.ts_last = ts
+
 
         # El 4o bloque es el evento que ademas tiene un : al final
         bloque_evento = bloques[3]
@@ -523,6 +535,12 @@ def imprime_resultados():
 
     for pid in sorted (res.lwp_dico.keys()) :
         lwp = res.lwp_dico[pid]
+
+        # LWP que no han completado un fragmento son ignorados
+        if len(lwp.fragmentos) == 0 :
+            continue
+
+        # Listado de fragmentos
         print "Estadisticas de PID %d basename %s" % (lwp.pid, lwp.basecmd)
         print "-----------------------------------------"
         print
@@ -542,7 +560,26 @@ def imprime_resultados():
             print "%10s %10s %10s %10s %10s %10s %10s %10s" % (contador, comienzo_ms, duracion_ms, CPUs,
                                                                hueco_us, separacion_ms, max_hueco_us, latencia_ms)
 
-        print
+        # Datos del LWP por CPU
+        for cpuid in res.cpu_dico.keys() :
+
+            print "CPU %d:" % cpuid,
+            fragmentos_cpu = filter( lambda frg : cpuid in frg.cpus, lwp.fragmentos)
+
+            # Si no se ha usado se pone a 0 y se sigue
+            if len(fragmentos_cpu) == 0 :
+                print "Exec: 0  Pctg 0%"
+                continue
+
+            ts_first_cpu = fragmentos_cpu[0].comienzo
+            ts_last_cpu = fragmentos_cpu[-1].comienzo + fragmentos_cpu[-1].duracion
+            ts_duracion = ts_last_cpu - ts_first_cpu
+            pcrg_cpu = 100.0*lwp.total_exec[cpuid].to_us()/ts_duracion.to_us()
+
+            print "Exec: %s  Duracion: %s  Pct: %f" % (lwp.total_exec[cpuid].to_msg(), ts_duracion.to_msg(),
+                                                       pcrg_cpu)
+        
+        # Dejamos una linea de separacion
         print
 
 

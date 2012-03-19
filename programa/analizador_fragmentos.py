@@ -2,6 +2,19 @@
 # -*- coding: utf-8 -*-
 
 import sys
+import argparse
+
+# TODO:
+#
+# - Implementar el filtrado de PIDs
+# - Implementar el filtrado de CPUs
+# - Implementar el filtrado de tiempo (rel y abs)
+# - Implementar el filtrado de linea
+#
+# - Implementar funcionalidad info
+#
+# - Implementar autolanzado de trace-cmd report
+
 
 # Analizador de fragmentos de trace-cmd
 #
@@ -33,13 +46,6 @@ import sys
 # --granularity_us     Granularidad
 
 
-class inp:
-#    report_filename = 'report.txt'
-    report_filename = 'trace_cte_report.txt'
-    first_record = -1
-    last_record = -1
-#    granularity = 5
-    granularity = 30
 
 class res:
     lwp_dico = {}
@@ -64,6 +70,32 @@ class glb:
     # Obtenido de trace-cmd --events | less (y buscando sched_switch)
     state_num_to_char = {"0x0":'R', "0x1":'S', "0x2":"D", "0x4":"T", "0x8":"t", "0x10":"Z", 
                          "0x20":"X", "0x40":"x", "0x80":"W"}
+
+    # From cmdline
+    report_filename = 'trace_cte_report.txt'
+    report_file = None
+    keep_text_file = True
+    granularity = None
+    pids_processed = []
+    cpus_processed = []
+    granularity = None
+    from_rel = None
+    to_rel = None
+    from_abs = None
+    to_abs = None
+    from_line = -1
+    to_line = -1
+    mode = "p" # p for process, i for info
+    info_pids = False
+    info_cpus = False
+    nr_linea_inicial = 0
+
+class opt:
+    filename = ""
+    keep_text_file = True
+    from_abs = ""
+    to_abs = ""
+
 
 class Timestamp:
 
@@ -191,10 +223,192 @@ class Cpu_data:
 
 def main():
 
+    # Parseamos los argumentos
+    parsea_argv()
 
-    parsea_fichero()
-    # PRINT RESULT
-    imprime_resultados()
+    # Abrimos el fichero y lo convertimos a texto si hace falta
+    open_trace_file()
+
+    if glb.mode == "p" :
+        procesa_fichero()
+        report_proceso()
+    elif glb.mode == "i" :
+        info_fichero()
+        report_info()
+
+
+# ---------------------------------------------------------------
+
+#
+# parsea argv
+#
+#--------------------------------------------------------------
+def parsea_argv() :
+
+    parser = argparse.ArgumentParser(description='Analiza trazas de trace-cmd/kernelshark.',
+                                     epilog = 'cualquier opcion --info anula el modo procesamiento')
+
+    parser.add_argument('--gran',
+                        default = 30,
+                        type = int,
+                        help = 'Granularidad en usec para unir bloques de ejecucion')
+
+    parser.add_argument('--file',
+                        default = 'trace.dat',
+                        help = 'Fichero a examinar.  Puede ser binario o texto, por defecto trace.dat')
+    parser.add_argument('--keep-text',
+                        action = 'store_true',
+                        help = 'Mantener el fichero de texto autogenerado')
+
+    parser.add_argument('--pids',
+                        help = 'pid1,pid2,...,pidN:  Procesar unicamente los PIDs de la lista')
+    parser.add_argument('--process-idle',
+                        action='store_true',
+                        help = 'Procesa ademas las tareas swapper (idle) de cada CPU')
+
+    parser.add_argument('--cpus',
+                        help = 'cpuid0,cpuid1,cpuid2...:  Procesar unicamente los eventos que ocurren en las CPUs de la lista')
+
+    parser.add_argument('--from',
+                        dest = 'from_rel',
+                        help = 'Tiempo de comienzo relativo en milisegundos')
+    parser.add_argument('--to',
+                        dest = 'to_rel',
+                        help = 'Tiempo de final relativo en milisegundos')
+    parser.add_argument('--from-line',
+                        type = int,
+                        default = -1,
+                        help = 'Linea de fichero a partir de la cual se empieza a procesar')
+    parser.add_argument('--to-line',
+                        type = int,
+                        default = -1,
+                        help = 'Linea de fichero hasta la cual se sigue procesando')
+    parser.add_argument('--from-abs',
+                        help = 'Tiempo de comienzo absoluto <segundos>.<usec>')
+    parser.add_argument('--to-abs',
+                        help = 'Tiempo de final absoluto <segundos>.<usec>')
+
+
+    parser.add_argument('--info',
+                        action = 'store_true',
+                        help = 'Da datos globales del fichero:  inicio, final, duracion, nr_pids, nr_cpus, nr_lineas')
+
+    parser.add_argument('--info-pids',
+                        action = 'store_true',
+                        help = 'Lista los PIDs con sus basecmd de los threads que tiene la traza')
+    parser.add_argument('--info-cpus',
+                        action = 'store_true',
+                        help = 'Lista las CPUs que intervienen en la traza')
+
+
+    args = parser.parse_args()
+
+    opt.filename = args.file
+
+    # temporal fix until trace-cmd report is added
+    if opt.filename == "trace.dat" :
+        opt.filename = 'trace_cte_report.txt'
+
+
+    opt.keep_text_file = args.keep_text
+
+    if args.info or args.info_pids or args.info_cpus :
+        glb.mode = "i"
+        glb.info_pids = args.info_pids
+        glb.info_cpus = args.info_cpus
+    else:
+        glb.mode = "p"
+        glb.granularity = Timestamp(0, args.gran)
+        if (args.pids) :
+            glb.pids_processed = map( int, args.pids.split(',') )
+
+        if (args.cpus) :
+            glb.cpus_processed = map( int, args.cpus.split(',') )
+
+    if (args.from_rel) :
+        glb.from_rel = Timestamp(string=args.from_rel)
+
+    if (args.to_rel) :
+        glb.to_rel = Timestamp(string=args.to_rel)
+
+    if (args.from_abs) :
+        opt.from_abs = Timestamp(string=args.from_abs)
+
+    if (args.to_abs) :
+        opt.to_abs = Timestamp(string=args.to_abs)
+
+    glb.from_line = args.from_line
+    glb.to_line = args.to_line
+
+#
+# open_trace_file()
+#
+# Esta funcion tiene la mision siguiente:
+# *  Mirar si el fichero de entrada es binario y si es asi llamar a lanza_trace_cmd_report()
+#    para generar el fichero de texto.
+#
+# *  Dejar el fichero de texto abierto y preparado para procesar lineas,
+#
+# *  Si el fichero de entrada ya es de texto pone glb.keep_text_file a true
+#
+# *  Al final de la funcion se ha de cumplir:
+#    -  glb.report_filename contiene el nombre del fichero de traceado de TEXTO
+#    -  glb.report_file contiene el file del fichero de traceado
+#    -  El glb.report_file esta abierto y apuntando a la primera linea
+#    -  glb.nr_linea_inicial contiene la ultima linea procesada
+# --------------------------------------------------------------------------
+def open_trace_file() :
+
+    report_file = open(opt.filename, "rb")
+    # investigate if it is a binary or text file
+    first_twenty_bytes = report_file.read(20)
+    report_file.close()
+
+    first_three_bytes = first_twenty_bytes[0:3]
+    first_seven_bytes = first_twenty_bytes[0:7]
+    
+    
+    if first_three_bytes == '\x17\x08\x044' :
+        # magic value of trace.dat file (see man trace-cmd-dat)
+        glb.keep_text_file = opt.keep_text_file
+        lanza_trace_cmd_report()
+        abre_y_consume_header()
+    elif first_seven_bytes == 'version' :
+        glb.report_filename = opt.filename
+        glb.keep_text_file = True
+        abre_y_consume_header()
+    else :
+        # Se supone que el fichero se compone de lineas con el header
+        # eliminado (ej copia directa de tracing/trace
+        binario = False
+        for michar in first_twenty_bytes :
+            if ord(michar) < 0x20 :
+                if ord(michar) != 0x0a and ord(michar) != 0x09 and ord(michar) != 0x0d :
+                    binario = True
+            elif ord(michar) > 127 :
+                binario = True
+            
+            if binario :
+                print "Fichero binario incompatible"
+                exit(-1)
+
+        # Vistos los primeros 20 bytes concluimos que es un fichero de texto
+        # y por tanto parseable
+        glb.report_filename = opt.filename
+        glb.keep_text_file = True
+        glb.report_file = open(glb.report_filename, "r")
+        glb.nr_linea_inicial = 0
+
+
+def abre_y_consume_header() :
+
+    glb.report_file = open(glb.report_filename, "r")
+    # First contains version = 6
+    glb.report_file.readline()
+    
+    # Second line contains CPU=N
+    linea_cpu = glb.report_file.readline()
+    glb.nr_linea_inicial = 2
 
 
 #
@@ -211,7 +425,12 @@ def main():
 # independientemente del tipo de evento que sea.
 # --------------------------------------------------------------
 def lanza_trace_cmd_report():
-    pass
+    
+    print ('La conversion de trace.dat binario a trace_report texto no esta implementada todavia')
+    print ('Lance trace-cmd report -r <fichero.dat> para hacerlo usted mismo')
+    exit(-1)
+    
+    # TBC
 
 
 #
@@ -225,22 +444,11 @@ def lanza_trace_cmd_report():
 #   BLOQUE-PROCESO-EJECUTANDO  [CPU] TIMESTAMP:  EVENTO:  PAR1=VAL1 PAR2=VAL2 PAR3=VAL3 ...
 
 # -----------------------------------------------------------------
-def parsea_fichero():
-    
-    inp.granularity = Timestamp(0, inp.granularity)
-    report_file = open(inp.report_filename)
-    
-    # First contains C
-    report_file.readline()
-    
-    # Second line contains CPU=N
-    linea_cpu = report_file.readline()
+def procesa_fichero():
 
-    [token, nr_cpus] = linea_cpu.split('=')
-
-    nr_linea = 2
+    nr_linea = glb.nr_linea_inicial
     # Bucle de lineas generales
-    for linea in report_file:
+    for linea in glb.report_file:
         nr_linea += 1
         
         # Metaformato de la linea
@@ -522,7 +730,7 @@ def procesa_sched_in(pid_entrante, muestra):
         # Ya no es el primer arranque
         tiempo_vacio = muestra.ts - lwp_entrante.last_sched_out
 
-        if (tiempo_vacio < inp.granularity):
+        if (tiempo_vacio < glb.granularity):
             # Estamos en hueco
             lwp_entrante.en_hueco = True
             fragmento = lwp_entrante.fragmentos.pop(-1)
@@ -586,14 +794,14 @@ def procesa_sched_migrate_task(muestra):
 
 # -------------------------------------------------------------------------------------
 
-def imprime_resultados():
+def report_proceso():
 
     # Resultados globales de la traza
     # -------------------------------
     duracion_total = res.ts_last - res.ts_first
     print
     print "Fichero: %s   ts_init: %s,  ts_last: %s,  duracion (ms): %s" % (
-          inp.report_filename, res.ts_first.to_msg(), res.ts_last.to_msg(), duracion_total.to_msg() )
+          opt.filename, res.ts_first.to_msg(), res.ts_last.to_msg(), duracion_total.to_msg() )
 
     print "CPUs totales: %d   PID totales: %d" % ( len(res.cpu_dico), len(res.lwp_dico) )
     print
@@ -601,7 +809,7 @@ def imprime_resultados():
     
     # Datos de entrada
     # ----------------
-    print "Granularidad us: %d " % (inp.granularity.us )
+    print "Granularidad us: %d " % (glb.granularity.us )
 
     # Resultados por LWP
     # ------------------
@@ -672,9 +880,16 @@ def imprime_resultados():
 
         print
 
+# ----------------------------------------------------
 
+def info_fichero() :
+    print "Funcionalidad de info aun no implementada"
+    
+def report_info() :
+    print "Reporte de info aun no implementado"
 
-# ----------------------------------------
+# ----------------------------------------------------
+
 
 def equal_asignments_to_dico(props):
     res = {}

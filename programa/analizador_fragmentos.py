@@ -321,6 +321,7 @@ def parsea_argv() :
         glb.granularity = Timestamp(0, args.gran)
         if (args.pids) :
             glb.pids_processed = map( int, args.pids.split(',') )
+            glb.process_idle = args.process_idle
 
         if (args.cpus) :
             glb.cpus_processed = map( int, args.cpus.split(',') )
@@ -447,6 +448,7 @@ def lanza_trace_cmd_report():
 def procesa_fichero():
 
     nr_linea = glb.nr_linea_inicial
+
     # Bucle de lineas generales
     for linea in glb.report_file:
         nr_linea += 1
@@ -586,14 +588,24 @@ def procesa_sched_switch(muestra):
     pid_saliente = int(muestra.param["prev_pid"])
     if pid_saliente == 0 :
         pid_saliente = -1*muestra.cpu
+        if len(glb.pids_processed) > 0 and glb.process_idle :
+            if pid_saliente not in glb.pids_processed :
+                glb.pids_processed.append(pid_saliente)
 
     pid_entrante = int(muestra.param["next_pid"])
     if pid_entrante == 0 :
         pid_entrante = -1*muestra.cpu
+        if len(glb.pids_processed) > 0 and glb.process_idle :
+            if pid_saliente not in glb.pids_processed :
+                glb.pids_processed.append(pid_saliente)
 
-    procesa_sched_out(pid_saliente, muestra)
-    procesa_sched_in(pid_entrante, muestra)
-    res.cpu_dico[muestra.cpu].nr_sched_switch += 1
+    if len(glb.pids_processed) == 0 or pid_saliente in glb.pids_processed :
+        procesa_sched_out(pid_saliente, muestra)
+        res.cpu_dico[muestra.cpu].nr_sched_switch += 1
+
+    if len(glb.pids_processed) == 0 or pid_entrante in glb.pids_processed :
+        procesa_sched_in(pid_entrante, muestra)
+        res.cpu_dico[muestra.cpu].nr_sched_switch += 1
 
 # -----------------------------------------------------------
 
@@ -765,6 +777,12 @@ def procesa_sched_wakeup(muestra):
 
     pid_wakeup = int(muestra.param["pid"])
 
+
+    if len(glb.pids_processed) > 0 and not pid_wakeup in glb.pids_processed :
+        # Filtramos por pid
+        return
+
+
     if not pid_wakeup in res.lwp_dico:
         # Nuevo PID que se despierta
         lwp_wakeup = Lwp_data()
@@ -873,6 +891,11 @@ def report_proceso():
     # Resultados por CPU
     for cpu in res.cpu_dico.values() :
         duracion = cpu.total_exec + cpu.total_idle
+
+        # Puede haber CPU's que no tengan ningun fragmento
+        if duracion == Timestamp(0,0):
+            continue
+
         pcrg_ocupado = 100.0*cpu.total_exec.to_us()/duracion.to_us()
 
         print "CPU %d:  Total exec:  %s    Total_idle:  %s   Duraction %s   Pctg_ocupado: %f" % (cpu.cpuid,

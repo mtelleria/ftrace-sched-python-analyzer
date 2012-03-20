@@ -60,9 +60,12 @@ class glb:
 
     # Dentro de los aceptados, estos eventos son tambien ignorados
     discarded_events = ['sched_stat_runtime']
+    discarded_events += ['sched_kthread_stop', 'sched_process_exit', 'sched_process_free',
+                         'sched_process_fork', 'sched_wakeup_new', 'sched_wait_task',
+                         'sched_process_wait', 'sched_kthread_stop_ret']
 
     # Estos son los eventos procesados
-    processed_events = ['sched_switch', 'sched_wakeup', 'sched_migrate_task']
+    processed_events = ['sched_switch', 'sched_wakeup', 'sched_migrate_task', ]
 
     # Eventos dentro de los subsistemas que no son ni ignorados ni procesados 
     # provocan un warning
@@ -178,13 +181,14 @@ class Muestra:
     
 class Fragmento:
     def __init__(self):
-        self.comienzo = Timestamp()
-        self.duracion = Timestamp()
-        self.cpus = [ ]
-        self.hueco = Timestamp()
-        self.max_hueco = Timestamp()
-        self.separacion = Timestamp()
-        self.latencia = Timestamp()
+        self.comienzo = Timestamp()       # Instante de comienzo   
+        self.duracion = Timestamp()       # Duracion (ejecucion + hueco interno de granularidad)
+        self.cpus = [ ]                   # CPU's en las que ejecuta
+        self.hueco = Timestamp()          # Tiempo interno no ejecutado
+        self.max_hueco = Timestamp()      # Maxima separacion interna (max granularidad)
+        self.periodo = Timestamp()        # Entre el inicio del anterior y el inicio actual
+        self.separacion = Timestamp()     # Entre el final del anterior y el final actual
+        self.latencia = Timestamp()       # Entre el wakeup y el comienzo
         self.pid = 0
 
 class Lwp_data:
@@ -655,7 +659,8 @@ def procesa_sched_out(pid_saliente, muestra):
 
             if len(lwp_saliente.fragmentos) > 0:
                 fragmento_previo = lwp_saliente.fragmentos[-1]
-                fragmento.separacion = fragmento.comienzo - fragmento_previo.comienzo
+                fragmento.periodo = fragmento.comienzo - fragmento_previo.comienzo
+                fragmento.separacion = fragmento.periodo - fragmento_previo.duracion
                 
             fragmento.cpus.append(muestra.cpu)
 
@@ -753,7 +758,6 @@ def procesa_sched_in(pid_entrante, muestra):
         else:
             # Una entrada normal ya no estamos en hueco
             lwp_entrante.en_hueco = False
-
             # Los PIDs de idle no tienen sched_wakeup
             if pid_entrante > 0 :
                 lwp_entrante.latencia = muestra.ts - lwp_entrante.last_wakeup
@@ -839,8 +843,8 @@ def report_proceso():
         print "Estadisticas de PID %d basename %s" % (lwp.pid, lwp.basecmd)
         print "-----------------------------------------"
         print
-        print "%10s %10s %10s %10s %10s %10s %10s %10s" % ("N Frag", "Start_ms", "Durac_ms", "CPUs", 
-                                                           "Hueco_us", "Separ_ms", "Max_Hueco_us", "Laten_ms")
+        print "%10s %10s %10s %10s %10s %10s %10s %10s %10s" % ("N Frag", "Start_ms", "Durac_ms", "CPUs", 
+                                                           "Hueco_us", "Periodo_ms", "Separ_ms", "Max_Hueco_us", "Laten_ms")
 
         # LWP que no han completado un fragmento son ignorados
         if len(lwp.fragmentos) == 0 :
@@ -854,12 +858,14 @@ def report_proceso():
             duracion_ms = fragmento.duracion.to_msg()
             CPUs = ' '.join( map(str, fragmento.cpus))
             hueco_us = fragmento.hueco.us
+            periodo_ms = fragmento.periodo.to_msg()
             separacion_ms = fragmento.separacion.to_msg()
             max_hueco_us = fragmento.max_hueco.us
             latencia_ms = fragmento.latencia.to_msg()
             
-            print "%10s %10s %10s %10s %10s %10s %10s %10s" % (contador, comienzo_ms, duracion_ms, CPUs,
-                                                               hueco_us, separacion_ms, max_hueco_us, latencia_ms)
+            print "%10s %10s %10s %10s %10s %10s %10s %10s %10s" % (contador, comienzo_ms, duracion_ms, CPUs,
+                                                               hueco_us, periodo_ms, separacion_ms, 
+                                                               max_hueco_us, latencia_ms)
 
         # Datos del LWP por CPU
         for cpuid in res.cpu_dico.keys() :

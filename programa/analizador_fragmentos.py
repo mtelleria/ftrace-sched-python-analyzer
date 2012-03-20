@@ -51,8 +51,9 @@ class res:
     lwp_dico = {}
     cpu_dico = {}
     ts_first = None # Timestamp absoluto
+    ts_first_str = ""
     ts_last = None # Timestamp absoluto
-
+    ts_last_str = ""
 
 class glb:
     # Eventos que no pertenezcan a estos subsistemas son filtrados
@@ -62,7 +63,8 @@ class glb:
     discarded_events = ['sched_stat_runtime']
     discarded_events += ['sched_kthread_stop', 'sched_process_exit', 'sched_process_free',
                          'sched_process_fork', 'sched_wakeup_new', 'sched_wait_task',
-                         'sched_process_wait', 'sched_kthread_stop_ret']
+                         'sched_process_wait', 'sched_kthread_stop_ret', 'sched_stat_wait',
+                         'sched_stat_sleep', 'sched_stat_iowait']
 
     # Estos son los eventos procesados
     processed_events = ['sched_switch', 'sched_wakeup', 'sched_migrate_task', ]
@@ -119,9 +121,17 @@ class Timestamp:
         return otro
 
     def to_msg(self):
-        ms_int = self.sg*1000 + self.us/1000
-        ms_frac = self.us % 1000
-        res = "%d.%03d" % (ms_int, ms_frac)
+        if self.sg < 0 or self.us < 0 :
+            signo = -1
+        else :
+            signo = 1
+
+        ms_int = abs(self.sg)*1000 + abs(self.us)/1000
+        ms_frac = abs(self.us) % 1000
+        if (signo == -1) :
+            res = "-%d.%03d" % (ms_int, ms_frac)
+        else :
+            res = "%d.%03d" % (ms_int, ms_frac)
         return res
 
     def to_us(self):
@@ -205,6 +215,7 @@ class Lwp_data:
         self.en_hueco = False
     
         self.last_wakeup = Timestamp(0, 0)
+        self.latencia = Timestamp(0, 0)
         self.last_sched_in = Timestamp(0, 0)
         self.last_sched_out = Timestamp(0, 0)
 
@@ -469,7 +480,9 @@ def procesa_fichero():
 
         if type(res.ts_first) == type(None) :
             res.ts_first = ts
+            res.ts_first_str = ts_str
             res.ts_last = ts
+            res.ts_last_str = ts_str
         else :
             if ts < res.ts_last :
                 exit_error_linea(nr_linea, ts_str, "Timestamp decreciente respecto a linea anterior")
@@ -654,8 +667,8 @@ def procesa_sched_out(pid_saliente, muestra):
             # Tenemos un nuevo fragmento !!
             fragmento = Fragmento()
             fragmento.comienzo = lwp_saliente.last_sched_in
-            if pid_saliente > 0 :
-                fragmento.latencia = fragmento.comienzo - lwp_saliente.last_wakeup
+            fragmento.latencia = lwp_saliente.latencia
+            lwp_saliente.latencia = Timestamp(0, 0)
 
             if len(lwp_saliente.fragmentos) > 0:
                 fragmento_previo = lwp_saliente.fragmentos[-1]
@@ -682,7 +695,7 @@ def procesa_sched_out(pid_saliente, muestra):
         chunk_exec = muestra.ts - lwp_saliente.last_sched_in
         lwp_saliente.total_exec[muestra.cpu] += chunk_exec
         lwp_saliente.last_sched_in = Timestamp(0,0)
-        lwp_saliente.last_wakeup = Timestamp(0,0)
+#        lwp_saliente.last_wakeup = Timestamp(0,0)
         
         if pid_saliente > 0 :
             res.cpu_dico[muestra.cpu].total_exec += chunk_exec
@@ -739,9 +752,10 @@ def procesa_sched_in(pid_entrante, muestra):
         # Primer arranque
         if lwp_entrante.last_wakeup != Timestamp(0,0):
             lwp_entrante.latencia = muestra.ts - lwp_entrante.last_wakeup
+            lwp_entrante.last_wakeup = Timestamp(0,0)
         else:
             # Nota:  Esto tambien incluye los idle/swapper
-            lwp_entrante.latencia = Timestamp(0, 0) # Signalling that first latency is missing
+            lwp_entrante.latencia = Timestamp(0,-1) # Signalling that first latency is missing
 
     else:
         # Ya no es el primer arranque
@@ -755,12 +769,22 @@ def procesa_sched_in(pid_entrante, muestra):
             if tiempo_vacio > fragmento.max_hueco :
                 fragmento.max_hueco = tiempo_vacio
             lwp_entrante.fragmentos.append(fragmento)
+
+            if lwp_entrante.last_wakeup != Timestamp(0,0) :
+                warning_error_logico(muestra, pid_entrante, "se ha ignorado un wakeup previo en hueco")
+                lwp_entrante.last_wakeup = Timestamp(0,0)
         else:
             # Una entrada normal ya no estamos en hueco
             lwp_entrante.en_hueco = False
             # Los PIDs de idle no tienen sched_wakeup
-            if pid_entrante > 0 :
+            if lwp_entrante.last_wakeup != Timestamp(0,0) :
+                # El sched_in es debido a un desbloqueo
                 lwp_entrante.latencia = muestra.ts - lwp_entrante.last_wakeup
+                lwp_entrante.last_wakeup = Timestamp(0, 0)
+            else:
+                # El sched in es debido a una vuelta de preemption
+                # el proceso no se bloqueo por lo que no consideramos la latencia
+                lwp_entrante.latencia = Timestamp(0, -1)
                 
     # Actualizamos campos comunes
     lwp_entrante.last_sched_in = muestra.ts
@@ -805,6 +829,7 @@ def procesa_sched_wakeup(muestra):
             warning_error_logico(muestra, pid_wakeup, "sched_in y sched_wakeup sin sched_out en medio")
 
     lwp_wakeup.last_wakeup = muestra.ts
+        
 
 def procesa_sched_migrate_task(muestra):
     pass
@@ -823,7 +848,7 @@ def report_proceso():
     duracion_total = res.ts_last - res.ts_first
     print
     print "Fichero: %s   ts_init: %s,  ts_last: %s,  duracion (ms): %s" % (
-          opt.filename, res.ts_first.to_msg(), res.ts_last.to_msg(), duracion_total.to_msg() )
+          opt.filename, res.ts_first_str, res.ts_last_str, duracion_total.to_msg() )
 
     print "CPUs totales: %d   PID totales: %d" % ( len(res.cpu_dico), len(res.lwp_dico) )
     print
@@ -922,7 +947,25 @@ def report_info() :
 
 def equal_asignments_to_dico(props):
     res = {}
-    for prop in props:
+
+    # detectamos strings sin '=' que significa que son apendices de la
+    # anterior.
+    #
+    # ej: ['comm=dconf', 'worker', 'pid=4704', 'prio=120', 'success=1', 'target_cpu=0']
+    #
+    # tiene que pasar a
+    # ej: ['comm=dconf worker', 'pid=4704', 'prio=120', 'success=1', 'target_cpu=0']
+
+    props_con_espacios = []
+    for prop in props :
+        if prop.find('=') >= 0 :
+            props_con_espacios.append(prop)
+        else :
+            previous_prop = props_con_espacios.pop(-1)
+            previous_prop += (' ' + prop)
+            props_con_espacios.append(previous_prop)
+
+    for prop in props_con_espacios:
         [key, val] = prop.split('=')
         res[key] = val
 
@@ -937,7 +980,11 @@ def exit_error_linea(nr_linea, ts_str, mensaje):
     
              
 def warning_error_logico(muestra, pid, mensaje):
-    print "WARNING: Linea " + str(muestra.nr_linea) + " TS: " + muestra.ts_str + " PID: " + str(pid) + ": " + mensaje
+    print "WARNING:  Linea: %d  TS_ABS: %s  TS_REL: %s  PID: %d  : %s" % (muestra.nr_linea,
+                                                                          muestra.ts_str,
+                                                                          muestra.ts.to_msg(),
+                                                                          pid,
+                                                                          mensaje)
     
 
 

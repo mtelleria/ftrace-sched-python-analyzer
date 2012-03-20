@@ -596,8 +596,8 @@ def procesa_sched_switch(muestra):
     if pid_entrante == 0 :
         pid_entrante = -1*muestra.cpu
         if len(glb.pids_processed) > 0 and glb.process_idle :
-            if pid_saliente not in glb.pids_processed :
-                glb.pids_processed.append(pid_saliente)
+            if pid_entrante not in glb.pids_processed :
+                glb.pids_processed.append(pid_entrante)
 
     if len(glb.pids_processed) == 0 or pid_saliente in glb.pids_processed :
         procesa_sched_out(pid_saliente, muestra)

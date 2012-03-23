@@ -82,15 +82,8 @@ class glb:
     report_file = None
     keep_text_file = True
     granularity = None
-    pids_processed = []
-    cpus_processed = []
+    filtros = {}
     granularity = None
-    from_rel = None
-    to_rel = None
-    from_abs = None
-    to_abs = None
-    from_line = -1
-    to_line = -1
     mode = "p" # p for process, i for info
     info_pids = False
     info_cpus = False
@@ -224,12 +217,8 @@ def parsea_argv() :
                         dest = 'to_rel',
                         help = 'Tiempo de final relativo en milisegundos')
     parser.add_argument('--from-line',
-                        type = int,
-                        default = -1,
                         help = 'Linea de fichero a partir de la cual se empieza a procesar')
     parser.add_argument('--to-line',
-                        type = int,
-                        default = -1,
                         help = 'Linea de fichero hasta la cual se sigue procesando')
     parser.add_argument('--from-abs',
                         help = 'Tiempo de comienzo absoluto <segundos>.<usec>')
@@ -268,17 +257,18 @@ def parsea_argv() :
         glb.mode = "p"
         glb.granularity = Timestamp(0, args.gran)
         if (args.pids) :
-            glb.pids_processed = map( int, args.pids.split(',') )
-            glb.process_idle = args.process_idle
+            glb.filtros['pids'] = map( int, args.pids.split(',') )
+            if (args.process_idle) :
+                glb.filtros['idle'] = True
 
         if (args.cpus) :
-            glb.cpus_processed = map( int, args.cpus.split(',') )
+            glb.filtros['cpus'] = map( int, args.cpus.split(',') )
 
     if (args.from_rel) :
-        glb.from_rel = Timestamp(string=args.from_rel)
+        glb.filtros['from_rel'] = Timestamp(string_ms=args.from_rel)
 
     if (args.to_rel) :
-        glb.to_rel = Timestamp(string=args.to_rel)
+        glb.filtros['to_rel'] = Timestamp(string_ms=args.to_rel)
 
     if (args.from_abs) :
         opt.from_abs = Timestamp(string=args.from_abs)
@@ -286,8 +276,14 @@ def parsea_argv() :
     if (args.to_abs) :
         opt.to_abs = Timestamp(string=args.to_abs)
 
-    glb.from_line = args.from_line
-    glb.to_line = args.to_line
+    if args.from_line :
+        glb.filtros['from_line'] = int(args.from_line)
+        glb.filtros['from_line_ts'] = Timestamp(0, -1)
+
+    if args.to_line :
+        glb.filtros['to_line'] = int(args.to_line)
+        glb.filtros['to_line_ts'] = Timestamp(0, -1)
+
 
 #
 # open_trace_file()
@@ -416,10 +412,42 @@ def procesa_fichero():
             res.ts_first_str = ts_str
             res.ts_last = ts
             res.ts_last_str = ts_str
+
+            if opt.from_abs :
+                glb.filtros['from_abs'] = opt.from_abs - res.ts_first
+
+            if opt.to_abs :
+                glb.filtros['to_abs'] = opt.to_abs - res.ts_first
+
         else :
             if ts < res.ts_last :
                 exit_error_linea(nr_linea, ts_str, "Timestamp decreciente respecto a linea anterior")
             res.ts_last = ts
+
+        # Pasamos ts a valor RELATIVO
+        ts = ts - res.ts_first
+
+        # Filtramos por tiempo
+        if 'from_rel' in glb.filtros :
+            if ts < glb.filtros['from_rel'] : continue
+
+        if 'to_rel' in glb.filtros :
+            if ts > glb.filtros['to_rel'] : continue
+
+        if 'from_abs' in glb.filtros :
+            if ts < glb.filtros['from_abs'] : continue
+
+        if 'to_abs' in glb.filtros :
+            if ts > glb.filtros['to_abs'] : continue
+
+        # Filtramos por nr_linea
+        if 'from_line' in glb.filtros :
+            if nr_linea < glb.filtros['from_line'] : continue
+            if nr_linea == glb.filtros['from_line'] : glb.filtros['from_line_ts'] = ts
+                
+        if 'to_line' in glb.filtros :
+            if nr_linea > glb.filtros['to_line'] : continue
+            if nr_linea == glb.filtros['to_line'] : glb.filtros['to_line_ts'] = ts
 
 
         # El 4o bloque es el evento que ademas tiene un : al final
@@ -456,8 +484,7 @@ def procesa_fichero():
         muestra.ts_str = ts_str
         muestra.evento = evento
         muestra.subsys = subsys
-        muestra.ts = Timestamp()
-        muestra.ts = Timestamp(string=ts_str) - res.ts_first
+        muestra.ts = ts
 
         # Bloque PID  ej:  trace-cmd-20674
         [muestra.basecmd, separador, muestra.pid] = bloques[0].rpartition('-')
@@ -468,6 +495,11 @@ def procesa_fichero():
         # Bloque CPU  ej: [001]
         cpu_str = bloques[1]
         muestra.cpu = int(cpu_str[1:-1])
+
+        if 'cpus' in glb.filtros and muestra.cpu not in glb.filtros['cpus'] :
+            # Filtramos por CPU
+            continue
+
         if not muestra.cpu in res.cpu_dico :
             nueva_cpu(muestra.cpu)
 
@@ -538,24 +570,35 @@ def procesa_sched_switch(muestra):
     pid_saliente = int(muestra.param["prev_pid"])
     if pid_saliente == 0 :
         pid_saliente = -1*muestra.cpu
-        if len(glb.pids_processed) > 0 and glb.process_idle :
-            if pid_saliente not in glb.pids_processed :
-                glb.pids_processed.append(pid_saliente)
+        if 'idle' in glb.filtros :
+            if pid_saliente not in glb.filtros['pids'] :
+                glb.filtros['pids'].append(pid_saliente)
 
     pid_entrante = int(muestra.param["next_pid"])
     if pid_entrante == 0 :
         pid_entrante = -1*muestra.cpu
-        if len(glb.pids_processed) > 0 and glb.process_idle :
-            if pid_entrante not in glb.pids_processed :
-                glb.pids_processed.append(pid_entrante)
+        if 'idle' in glb.filtros :
+            if pid_entrante not in glb.filtros['pids'] :
+                glb.filtros['pids'].append(pid_entrante)
 
-    if len(glb.pids_processed) == 0 or pid_saliente in glb.pids_processed :
+    procesa_saliente = False
+    procesa_entrante = False
+    if 'pids' in glb.filtros :
+        if pid_saliente in glb.filtros['pids'] :
+            procesa_saliente = True
+        if pid_entrante in glb.filtros['pids'] :
+            procesa_entrante = True
+    else :
+        procesa_saliente = True
+        procesa_entrante = True
+
+    if procesa_saliente :
         procesa_sched_out(pid_saliente, muestra)
-        res.cpu_dico[muestra.cpu].nr_sched_switch += 1
-
-    if len(glb.pids_processed) == 0 or pid_entrante in glb.pids_processed :
+    
+    if procesa_entrante :
         procesa_sched_in(pid_entrante, muestra)
-        res.cpu_dico[muestra.cpu].nr_sched_switch += 1
+
+    res.cpu_dico[muestra.cpu].nr_sched_switch += 1
 
 # -----------------------------------------------------------
 
@@ -738,11 +781,9 @@ def procesa_sched_wakeup(muestra):
 
     pid_wakeup = int(muestra.param["pid"])
 
-
-    if len(glb.pids_processed) > 0 and not pid_wakeup in glb.pids_processed :
+    if 'pids' in glb.filtros and not pid_wakeup in glb.filtros['pids'] :
         # Filtramos por pid
         return
-
 
     if not pid_wakeup in res.lwp_dico:
         # Nuevo PID que se despierta
@@ -784,17 +825,42 @@ def report_proceso():
           opt.filename, res.ts_first_str, res.ts_last_str, duracion_total.to_msg() )
 
     print "CPUs totales: %d   PID totales: %d" % ( len(res.cpu_dico), len(res.lwp_dico) )
-    print
 
     
     # Datos de entrada
     # ----------------
     print "Granularidad us: %d " % (glb.granularity.us )
-    if len(glb.pids_processed) > 0 :
-        print "PIDs procesados: ",
-        print glb.pids_processed
 
-    
+    if len(glb.filtros) > 0 :
+        print "FILTRANDO: ",
+        if 'pids' in glb.filtros :
+            print " PIDs: ",
+            print glb.filtros['pids'],
+
+        if 'cpus' in glb.filtros :
+            print " CPUs: ",
+            print glb.filtros['cpus'],
+
+        if 'from_rel' in glb.filtros :
+            print " From_rel: %s " % (glb.filtros['from_rel'].to_msg() ),
+        
+        if 'to_rel' in glb.filtros :
+            print " To_rel:  %s " % (glb.filtros['to_rel'].to_msg() ),
+
+        if 'from_abs' in glb.filtros :
+            print " From_abs: %s (%s) " % (opt.from_abs, glb.filtros['from_abs'].to_msg() ),
+        
+        if 'to_abs' in glb.filtros :
+            print " To_abs:  %s (%s)" % (opt.to_abs, glb.filtros['to_rel'].to_msg() ),
+
+        if 'from_line' in glb.filtros :
+            print " From_line: %d (%s)" % (glb.filtros['from_line'], glb.filtros['from_line_ts'].to_msg()),
+        
+        if 'to_line' in glb.filtros :
+            print "To line: %d (%s)" % (glb.filtros['to_line'], glb.filtros['to_line_ts'].to_msg()),
+
+        print
+        print
 
     # Resultados por LWP
     # ------------------

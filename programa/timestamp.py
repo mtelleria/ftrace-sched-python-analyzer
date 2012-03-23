@@ -1,11 +1,26 @@
 # -*- coding: utf-8 -*-
 class Timestamp:
 
-    def __init__(self, sg=0, us=0, string=""):
+    def __init__(self, sg=0, us=0, string="", string_ms=""):
         if string != "":
             [sg_str, us_str] = string.split('.')
             self.sg = int(sg_str)
             self.us = int(us_str)
+            
+        elif string_ms != "":
+            self.sg = 0
+            self.us = 0
+            if string_ms.find('.') >= 0 :
+                [ms_str, us_str] = string_ms.split('.')
+                if ms_str:
+                    self.sg = int(ms_str) / 1000
+                    self.us = (int(ms_str) % 1000) * 1000
+                if us_str:
+                    self.us += int(us_str)
+            else :
+                # No hay . entonces son todo msg
+                self.sg = int(string_ms) / 1000
+                self.us = (int(string_ms) % 1000) * 1000
         else:
             self.sg = sg
             self.us = us

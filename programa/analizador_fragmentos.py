@@ -873,7 +873,7 @@ def report_proceso():
         print "-----------------------------------------"
         print
         print "%10s %10s %10s %10s %10s %10s %10s %10s %10s" % ("N Frag", "Start_ms", "Durac_ms", "CPUs", 
-                                                           "Hueco_us", "Periodo_ms", "Separ_ms", "Max_Hueco_us", "Laten_ms")
+                                                           "Hueco_ms", "Periodo_ms", "Separ_ms", "Max_Hueco_ms", "Laten_ms")
 
         # LWP que no han completado un fragmento son ignorados
         if len(lwp.fragmentos) == 0 :
@@ -886,15 +886,15 @@ def report_proceso():
             comienzo_ms = fragmento.comienzo.to_msg()
             duracion_ms = fragmento.duracion.to_msg()
             CPUs = ' '.join( map(str, fragmento.cpus))
-            hueco_us = fragmento.hueco.us
+            hueco_ms = fragmento.hueco.to_msg()
             periodo_ms = fragmento.periodo.to_msg()
             separacion_ms = fragmento.separacion.to_msg()
-            max_hueco_us = fragmento.max_hueco.us
+            max_hueco_ms = fragmento.max_hueco.to_msg()
             latencia_ms = fragmento.latencia.to_msg()
             
             print "%10s %10s %10s %10s %10s %10s %10s %10s %10s" % (contador, comienzo_ms, duracion_ms, CPUs,
-                                                               hueco_us, periodo_ms, separacion_ms, 
-                                                               max_hueco_us, latencia_ms)
+                                                               hueco_ms, periodo_ms, separacion_ms, 
+                                                               max_hueco_ms, latencia_ms)
 
         # Datos del LWP por CPU
         for cpuid in res.cpu_dico.keys() :

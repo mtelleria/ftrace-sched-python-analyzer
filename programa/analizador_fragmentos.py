@@ -377,6 +377,48 @@ def lanza_trace_cmd_report():
     
     # TBC
 
+#   BLOQUE-PROCESO-EJECUTANDO  [CPU] TIMESTAMP:  EVENTO:  PAR1=VAL1 PAR2=VAL2 PAR3=VAL3 ...
+def parsea_linea(linea, nr_linea) :
+    
+    # Quitamos espacios antes y despues
+    linea.strip()
+
+    # Filtramos comentarios y lineas vacias
+    if linea[0] == '#' :
+        return []
+
+    if linea == '' :
+        return []
+    
+    bloques = linea.split()
+    if len(bloques) < 5 :
+        warning_error_linea(nr_linea, "", "Formato de linea desconocido")
+        return []
+
+    # Bloque PID  ej:  trace-cmd-20674
+    [basecmd, separador, pid] = bloques[0].rpartition('-')
+    if separador == "":
+        exit_error_linea(nr_linea, ts_str, "Imposible separar basecmdline y PID")
+    pid = int(pid)
+
+
+    # Bloque CPU  ej: [001]
+    cpu_str = bloques[1]
+    cpu = int(cpu_str[1:-1])
+
+    
+    # Bloque Timestamp ej: 1031300.404380:
+    ts_str = bloques[2][0:-1]
+
+    
+    # Bloque evento ej: sched_wakeup:
+    evento = bloques[3][0:-1]
+
+
+    # Params (ej  comm=kworker/1:2 pid=19785 prio=120 success=1 target_cpu=1)
+    param = equal_asignments_to_dico(bloques[4:])
+
+    return [basecmd, pid, cpu, ts_str, evento, param]
 
 #
 # parsea_fichero()
@@ -397,14 +439,13 @@ def procesa_fichero():
     for linea in glb.report_file:
         nr_linea += 1
         
-        # Metaformato de la linea
-        # <Proceso_ejecutando> <cpu_ejecutando> <timestamp> <event_name> <params-eventname>
-        #  BLOQUE-PROCESO-EJECUTANDO  [CPU] TIMESTAMP:  EVENTO: PAR1=VAL1 PAR2=VAL2 PAR3=VAL3 ...
+        res_parser = parsea_linea(linea, nr_linea)
+        if len(res_parser) < 6 :
+            # Error de formato, el warning ya esta enviado por parsea linea
+            continue
 
-        bloques = linea.split()
+        [basecmd, pid, cpu, ts_str, evento, param] = res_parser
 
-        bloque_ts = bloques[2]
-        ts_str = bloque_ts[0:-1]
         ts = Timestamp(string=ts_str)
 
         if type(res.ts_first) == type(None) :
@@ -450,11 +491,6 @@ def procesa_fichero():
             if nr_linea == glb.filtros['to_line'] : glb.filtros['to_line_ts'] = ts
 
 
-        # El 4o bloque es el evento que ademas tiene un : al final
-        bloque_evento = bloques[3]
-
-        # Con esto quitamos el ultimo caracter que es un ':'
-        evento = bloque_evento[0:-1]
 
         # Eventos de subsistemas no buscados son ignorados
 
@@ -485,16 +521,11 @@ def procesa_fichero():
         muestra.evento = evento
         muestra.subsys = subsys
         muestra.ts = ts
+        muestra.basecmd = basecmd
+        muestra.pid = pid
+        muestra.cpu = cpu
+        muestra.param = param
 
-        # Bloque PID  ej:  trace-cmd-20674
-        [muestra.basecmd, separador, muestra.pid] = bloques[0].rpartition('-')
-        if separador == "":
-            exit_error_linea(nr_linea, ts_str, "Imposible separar basecmdline y PID")
-        muestra.pid = int(muestra.pid)
-        
-        # Bloque CPU  ej: [001]
-        cpu_str = bloques[1]
-        muestra.cpu = int(cpu_str[1:-1])
 
         if 'cpus' in glb.filtros and muestra.cpu not in glb.filtros['cpus'] :
             # Filtramos por CPU
@@ -503,7 +534,6 @@ def procesa_fichero():
         if not muestra.cpu in res.cpu_dico :
             nueva_cpu(muestra.cpu)
 
-        muestra.param = equal_asignments_to_dico(bloques[4:])
         
         # Problema con la IDLE-task (swapper).  Es una tarea especial ya que:
         #
@@ -941,6 +971,8 @@ def report_proceso():
 # ----------------------------------------------------
 
 def info_fichero() :
+
+    
     print "Funcionalidad de info aun no implementada"
     
 def report_info() :
@@ -981,7 +1013,9 @@ def exit_error_linea(nr_linea, ts_str, mensaje):
     exit(-1)
 
 
-    
+def warning_error_linea(nr_linea, ts_str, mensaje):
+    print "Linea " + str(nr_linea) + " TS " + ts_str + ": " + mensaje
+
              
 def warning_error_logico(muestra, pid, mensaje):
     print "WARNING:  Linea: %d  TS_ABS: %s  TS_REL: %s  PID: %d  : %s" % (muestra.nr_linea,

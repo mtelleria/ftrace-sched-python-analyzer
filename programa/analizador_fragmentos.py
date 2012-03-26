@@ -55,6 +55,7 @@ class res:
     ts_first_str = ""
     ts_last = None # Timestamp absoluto
     ts_last_str = ""
+    nr_lineas = 0
 
 class glb:
     # Eventos que no pertenezcan a estos subsistemas son filtrados
@@ -125,7 +126,7 @@ class Fragmento:
         self.periodo = Timestamp()        # Entre el inicio del anterior y el inicio actual
         self.separacion = Timestamp()     # Entre el final del anterior y el final actual
         self.latencia = Timestamp()       # Entre el wakeup y el comienzo
-        self.pid = 0
+        self.pid = 0                      # Pid del fragmento
 
 class Lwp_data:
 
@@ -179,7 +180,6 @@ def main():
 
 
 # ---------------------------------------------------------------
-
 #
 # parsea argv
 #
@@ -406,9 +406,48 @@ def parsea_linea(linea, nr_linea) :
     cpu_str = bloques[1]
     cpu = int(cpu_str[1:-1])
 
-    
+
+    # Problema con la IDLE-task (swapper).  Es una tarea especial ya que:
+    #
+    # -  Tiene 2 basecmd:  <idle> y swapper/0, swapper/1, swapper/2
+    # -  Puede ejecutar en varias CPU's A LA VEZ (ya que no ejecuta nada)
+    # -  Las swapper de todos los cores comparten el mismo PID
+    #
+    # DECISION:  Cambiar el PID a:
+    # -  swapper/0 --> 0
+    # -  swapper/1 --> -1
+    # -  swapper/2 --> -2
+    #
+    # En nuestro programa, swapper es el único lwp que cambia de PID cuando
+    # pasa a otra CPU.
+    if pid == 0 :
+        pid = -1 * cpu
+        basecmd = "swapper/" + str(cpu)
+
+
     # Bloque Timestamp ej: 1031300.404380:
     ts_str = bloques[2][0:-1]
+    ts = Timestamp(string=ts_str)
+
+    if type(res.ts_first) == type(None) :
+        res.ts_first = ts
+        res.ts_first_str = ts_str
+        res.ts_last = ts
+        res.ts_last_str = ts_str
+        
+        if opt.from_abs :
+            glb.filtros['from_abs'] = opt.from_abs - res.ts_first
+
+        if opt.to_abs :
+            glb.filtros['to_abs'] = opt.to_abs - res.ts_first
+
+    else :
+        if ts < res.ts_last :
+            exit_error_linea(nr_linea, ts_str, "Timestamp decreciente respecto a linea anterior")
+        res.ts_last = ts
+
+    # Pasamos ts a valor RELATIVO
+    ts = ts - res.ts_first
 
     
     # Bloque evento ej: sched_wakeup:
@@ -418,7 +457,7 @@ def parsea_linea(linea, nr_linea) :
     # Params (ej  comm=kworker/1:2 pid=19785 prio=120 success=1 target_cpu=1)
     param = equal_asignments_to_dico(bloques[4:])
 
-    return [basecmd, pid, cpu, ts_str, evento, param]
+    return [basecmd, pid, cpu, ts_str, ts, evento, param]
 
 #
 # parsea_fichero()
@@ -440,33 +479,12 @@ def procesa_fichero():
         nr_linea += 1
         
         res_parser = parsea_linea(linea, nr_linea)
-        if len(res_parser) < 6 :
+        if len(res_parser) < 7 :
             # Error de formato, el warning ya esta enviado por parsea linea
             continue
 
-        [basecmd, pid, cpu, ts_str, evento, param] = res_parser
+        [basecmd, pid, cpu, ts_str, ts, evento, param] = res_parser
 
-        ts = Timestamp(string=ts_str)
-
-        if type(res.ts_first) == type(None) :
-            res.ts_first = ts
-            res.ts_first_str = ts_str
-            res.ts_last = ts
-            res.ts_last_str = ts_str
-
-            if opt.from_abs :
-                glb.filtros['from_abs'] = opt.from_abs - res.ts_first
-
-            if opt.to_abs :
-                glb.filtros['to_abs'] = opt.to_abs - res.ts_first
-
-        else :
-            if ts < res.ts_last :
-                exit_error_linea(nr_linea, ts_str, "Timestamp decreciente respecto a linea anterior")
-            res.ts_last = ts
-
-        # Pasamos ts a valor RELATIVO
-        ts = ts - res.ts_first
 
         # Filtramos por tiempo
         if 'from_rel' in glb.filtros :
@@ -535,23 +553,6 @@ def procesa_fichero():
             nueva_cpu(muestra.cpu)
 
         
-        # Problema con la IDLE-task (swapper).  Es una tarea especial ya que:
-        #
-        # -  Tiene 2 basecmd:  <idle> y swapper/0, swapper/1, swapper/2
-        # -  Puede ejecutar en varias CPU's A LA VEZ (ya que no ejecuta nada)
-        # -  Las swapper de todos los cores comparten el mismo PID
-        #
-        # DECISION:  Cambiar el PID a:
-        # -  swapper/0 --> 0
-        # -  swapper/1 --> -1
-        # -  swapper/2 --> -2
-        #
-        # En nuestro programa, swapper es el único lwp que cambia de PID cuando
-        # pasa a otra CPU.
-
-        if muestra.pid == 0 :
-            muestra.pid = -1 * muestra.cpu
-            muestra.basecmd = "swapper/" + str(muestra.cpu)
         
         #muestra.escribe()
 
@@ -563,6 +564,8 @@ def procesa_fichero():
             procesa_sched_migrate_task(muestra)
         else:
             exit_error_linea(nr_linea, ts_str, "Error evento " + evento + " no soportado")
+
+    res.nr_lineas = nr_linea
 
             
 # Esta funcion se llama en cuanto se descubre una nueva CPU en
@@ -851,8 +854,8 @@ def report_proceso():
     # -------------------------------
     duracion_total = res.ts_last - res.ts_first
     print
-    print "Fichero: %s   ts_init: %s,  ts_last: %s,  duracion (ms): %s" % (
-          opt.filename, res.ts_first_str, res.ts_last_str, duracion_total.to_msg() )
+    print "Fichero: %s   ts_init: %s,  ts_last: %s,  duracion (ms): %s  nr_lineas: %d" % (
+          opt.filename, res.ts_first_str, res.ts_last_str, duracion_total.to_msg(), res.nr_lineas )
 
     print "CPUs totales: %d   PID totales: %d" % ( len(res.cpu_dico), len(res.lwp_dico) )
 
@@ -972,11 +975,65 @@ def report_proceso():
 
 def info_fichero() :
 
-    
-    print "Funcionalidad de info aun no implementada"
+    nr_linea = glb.nr_linea_inicial
+
+    # Bucle de lineas generales
+    for linea in glb.report_file:
+        nr_linea += 1
+        
+        res_parser = parsea_linea(linea, nr_linea)
+        if len(res_parser) < 7 :
+            # Error de formato, el warning ya esta enviado por parsea linea
+            continue
+
+        [basecmd, pid, cpu, ts_str, ts, evento, param] = res_parser
+
+        # Vemos si hay un nuevo PID
+        if pid not in res.lwp_dico :
+            lwp = Lwp_data()
+            lwp.pid = pid
+            lwp.basecmd = basecmd
+            res.lwp_dico[pid] = lwp
+            
+        if cpu not in res.cpu_dico :
+            res.cpu_dico[cpu] = 1
+
+    res.nr_lineas = nr_linea
+
+
+# --------------------------------------------------------
     
 def report_info() :
-    print "Reporte de info aun no implementado"
+
+    # Resultados globales de la traza
+    # -------------------------------
+    duracion_total = res.ts_last - res.ts_first
+    print
+    print "Fichero: %s   ts_init: %s,  ts_last: %s,  duracion (ms): %s,   nr_lineas: %d" % (
+          opt.filename, res.ts_first_str, res.ts_last_str, duracion_total.to_msg(), res.nr_lineas )
+
+    print "CPUs totales: %d   PID totales: %d" % ( len(res.cpu_dico), len(res.lwp_dico) )
+    print
+
+    if glb.info_pids :
+
+        print "Lista de PIDs"
+        print "-------------"
+        n_cols = 3
+        cur_col = 0
+        for pid in sorted (res.lwp_dico.keys()) :
+            print "PID: %6d  Basecmd: %15s  " % (res.lwp_dico[pid].pid, res.lwp_dico[pid].basecmd),
+            cur_col += 1
+            if cur_col % n_cols == 0:
+                cur_col = 0
+                print
+        print
+        print
+
+    if glb.info_cpus :
+        print "Lista de CPUs: ",
+        print sorted(res.cpu_dico.keys())
+
 
 # ----------------------------------------------------
 
@@ -1007,6 +1064,7 @@ def equal_asignments_to_dico(props):
 
     return res
 
+# -----------------------------------------------------------------------------
 
 def exit_error_linea(nr_linea, ts_str, mensaje):
     print "Linea " + str(nr_linea) + " TS " + ts_str + ": " + mensaje
@@ -1016,6 +1074,7 @@ def exit_error_linea(nr_linea, ts_str, mensaje):
 def warning_error_linea(nr_linea, ts_str, mensaje):
     print "Linea " + str(nr_linea) + " TS " + ts_str + ": " + mensaje
 
+# -----------------------------------------------------------------------------
              
 def warning_error_logico(muestra, pid, mensaje):
     print "WARNING:  Linea: %d  TS_ABS: %s  TS_REL: %s  PID: %d  : %s" % (muestra.nr_linea,

@@ -80,6 +80,8 @@ class glb:
     report_filename = 'trace_cte_report.txt'
     report_file = None
     keep_text_file = True
+    show_lost_wakeups = False
+    with_sanity_checks = False
     granularity = None
     filtros = {}
     granularity = None
@@ -205,6 +207,14 @@ def parsea_argv() :
                         action='store_true',
                         help = 'Procesa ademas las tareas swapper (idle) de cada CPU')
 
+    parser.add_argument('--show-lost-wakeups',
+                        action = 'store_true',
+                        help = "Muestra wakeups perdidos en huecos debido a alta granularidad")
+
+    parser.add_argument('--with-sanity-checks',
+                        action = 'store_true',
+                        help = 'Testea la coherencia de eventos y datos desde el punto de vista de este script')
+
     parser.add_argument('--cpus',
                         help = 'cpuid0,cpuid1,cpuid2...:  Procesar unicamente los eventos que ocurren en las CPUs de la lista')
 
@@ -258,9 +268,12 @@ def parsea_argv() :
             glb.filtros['pids'] = map( int, args.pids.split(',') )
             if (args.process_idle) :
                 glb.filtros['idle'] = True
+        glb.show_lost_wakeups = args.show_lost_wakeups
 
         if (args.cpus) :
             glb.filtros['cpus'] = map( int, args.cpus.split(',') )
+
+    glb.with_sanity_checks = args.with_sanity_checks
 
     if (args.from_rel) :
         glb.filtros['from_rel'] = Timestamp(string_ms=args.from_rel)
@@ -650,22 +663,23 @@ def procesa_sched_out(pid_saliente, muestra):
 
         # Sanity checks
         # -------------
-        if lwp_saliente.basecmd != muestra.param["prev_comm"]:
-            warning_error_logico(muestra, pid_saliente, "nuevo basecmdline, anterior: " 
-                              + lwp_saliente.basecmd + " nuevo: " + muestra.param["prev_comm"])
+        if glb.with_sanity_checks :
+            if lwp_saliente.basecmd != muestra.param["prev_comm"]:
+                warning_error_logico(muestra, pid_saliente, "nuevo basecmdline, anterior: " 
+                                  + lwp_saliente.basecmd + " nuevo: " + muestra.param["prev_comm"])
 
-        if lwp_saliente.last_sched_in == Timestamp(0,0):
-            warning_error_logico(muestra, pid_saliente, "tiene 2 sched_out sin ningun sched_in")
+            if lwp_saliente.last_sched_in == Timestamp(0,0):
+                warning_error_logico(muestra, pid_saliente, "tiene 2 sched_out sin ningun sched_in")
 
-        if not lwp_saliente.activo:
-            warning_error_logico(muestra, pid_saliente, "sale del scheduler estando inactivo")
+            if not lwp_saliente.activo:
+                warning_error_logico(muestra, pid_saliente, "sale del scheduler estando inactivo")
 
-        if lwp_saliente.last_wakeup != Timestamp(0,0) and lwp_saliente.last_sched_in == Timestamp(0,0):
-            warning_error_logico(muestra, pid_saliente, "wakeup y sched_out sin sched_in en medio")
+            if lwp_saliente.last_wakeup != Timestamp(0,0) and lwp_saliente.last_sched_in == Timestamp(0,0):
+                warning_error_logico(muestra, pid_saliente, "wakeup y sched_out sin sched_in en medio")
 
-        if pid_saliente != muestra.pid:
-            warning_error_logico(muestra, pid_saliente, 
-                              "el PID saliente no se corresponde con el PID de la muestra: " + muestra.pid)
+            if pid_saliente != muestra.pid:
+                warning_error_logico(muestra, pid_saliente, 
+                                  "el PID saliente no se corresponde con el PID de la muestra: " + muestra.pid)
             
         # Vemos si estamos en hueco o no (detectado por sched_in)
         if not lwp_saliente.en_hueco:
@@ -733,22 +747,24 @@ def procesa_sched_in(pid_entrante, muestra):
         lwp_entrante = res.lwp_dico[pid_entrante]
 
         # Sanity checks
-        if lwp_entrante.activo :
-            warning_error_logico(muestra, pid_entrante, " tiene 1 sched_in estando ya activo")
-        
-        # Por alguna razon los procesos idle/swapper no tienen eventos wakeup
-        if lwp_entrante > 0:
-            if lwp_entrante.last_sched_out != Timestamp(0,0) and lwp_entrante.last_wakeup == Timestamp(0,0):
-                warning_error_logico(muestra, pid_entrante, 
-                                     "tiene un periodo sched_out y sched_in sin wakeup en medio")
+        if glb.with_sanity_checks :
 
-        if  lwp_entrante.last_sched_in != Timestamp(0,0):
-            warning_error_logico(muestra, pid_entrante, "tiene un dos sched_in seguidos sin sched_out en medio")
+            if lwp_entrante.activo :
+                warning_error_logico(muestra, pid_entrante, " tiene 1 sched_in estando ya activo")
 
-        # NOTA:  Este check es mas de la propia script que de
-        #        los datos.
-        if lwp_entrante.last_sched_out == Timestamp(0, 0) and len(lwp_entrante.fragmentos) > 0:
-            warning_error_logico(muestra, pid_entrante, "sched_out es nulo pero tiene un fragmento anterior")
+            # Por alguna razon los procesos idle/swapper no tienen eventos wakeup
+            if lwp_entrante > 0:
+                if lwp_entrante.last_sched_out != Timestamp(0,0) and lwp_entrante.last_wakeup == Timestamp(0,0):
+                    warning_error_logico(muestra, pid_entrante, 
+                                         "tiene un periodo sched_out y sched_in sin wakeup en medio")
+
+            if  lwp_entrante.last_sched_in != Timestamp(0,0):
+                warning_error_logico(muestra, pid_entrante, "tiene un dos sched_in seguidos sin sched_out en medio")
+
+            # NOTA:  Este check es mas de la propia script que de
+            #        los datos.
+            if lwp_entrante.last_sched_out == Timestamp(0, 0) and len(lwp_entrante.fragmentos) > 0:
+                warning_error_logico(muestra, pid_entrante, "sched_out es nulo pero tiene un fragmento anterior")
 
 
     # Miramos si somos los primeros y si estamos en hueco
@@ -775,7 +791,7 @@ def procesa_sched_in(pid_entrante, muestra):
                 fragmento.max_hueco = tiempo_vacio
             lwp_entrante.fragmentos.append(fragmento)
 
-            if lwp_entrante.last_wakeup != Timestamp(0,0) :
+            if lwp_entrante.last_wakeup != Timestamp(0,0) and glb.show_lost_wakeups :
                 warning_error_logico(muestra, pid_entrante, "se ha ignorado un wakeup previo en hueco")
                 lwp_entrante.last_wakeup = Timestamp(0,0)
         else:
@@ -825,11 +841,12 @@ def procesa_sched_wakeup(muestra):
         lwp_wakeup = res.lwp_dico[pid_wakeup]
         
         # Sanity check
-        if lwp_wakeup.basecmd != muestra.param["comm"] :
-            warning_error_logico(muestra, pid_wakeup, "sched_wakeup shows a different basecmd")
+        if glb.with_sanity_checks :
+            if lwp_wakeup.basecmd != muestra.param["comm"] :
+                warning_error_logico(muestra, pid_wakeup, "sched_wakeup shows a different basecmd")
 
-        if lwp_wakeup.last_sched_in != Timestamp(0,0):
-            warning_error_logico(muestra, pid_wakeup, "sched_in y sched_wakeup sin sched_out en medio")
+            if lwp_wakeup.last_sched_in != Timestamp(0,0):
+                warning_error_logico(muestra, pid_wakeup, "sched_in y sched_wakeup sin sched_out en medio")
 
     lwp_wakeup.last_wakeup = muestra.ts
         
@@ -851,7 +868,7 @@ def report_proceso():
     duracion_total = res.ts_last - res.ts_first
     print
     print "Fichero: %s   ts_init: %s,  ts_last: %s,  duracion (ms): %s  nr_lineas: %d" % (
-          opt.filename, res.ts_first.to_str(), res.ts_last.to_str(), duracion_total.to_msg(), res.nr_lineas )
+          opt.filename, res.ts_first.to_sg_us_str(), res.ts_last.to_sg_us_str(), duracion_total.to_msg(), res.nr_lineas )
 
     print "CPUs totales: %d   PID totales: %d" % ( len(res.cpu_dico), len(res.lwp_dico) )
 
@@ -877,10 +894,10 @@ def report_proceso():
             print " To_rel:  %s " % (glb.filtros['to_rel'].to_msg() ),
 
         if 'from_abs' in glb.filtros :
-            print " From_abs: %s (%s) " % (opt.from_abs.to_str(), glb.filtros['from_abs'].to_msg() ),
+            print " From_abs: %s (%s) " % (opt.from_abs.to_sg_us_str(), glb.filtros['from_abs'].to_msg() ),
         
         if 'to_abs' in glb.filtros :
-            print " To_abs:  %s (%s)" % (opt.to_abs.to_str(), glb.filtros['to_abs'].to_msg() ),
+            print " To_abs:  %s (%s)" % (opt.to_abs.to_sg_us_str(), glb.filtros['to_abs'].to_msg() ),
 
         if 'from_line' in glb.filtros :
             print " From_line: %d (%s)" % (glb.filtros['from_line'], glb.filtros['from_line_ts'].to_msg()),
@@ -984,15 +1001,17 @@ def info_fichero() :
 
         [basecmd, pid, cpu, ts_str, ts, evento, param] = res_parser
 
-        # Vemos si hay un nuevo PID
-        if pid not in res.lwp_dico :
-            lwp = Lwp_data()
-            lwp.pid = pid
-            lwp.basecmd = basecmd
-            res.lwp_dico[pid] = lwp
+        if glb.info_pids :
+            # Vemos si hay un nuevo PID
+            if pid not in res.lwp_dico :
+                lwp = Lwp_data()
+                lwp.pid = pid
+                lwp.basecmd = basecmd
+                res.lwp_dico[pid] = lwp
             
-        if cpu not in res.cpu_dico :
-            res.cpu_dico[cpu] = 1
+        if glb.info_cpus :
+            if cpu not in res.cpu_dico :
+                res.cpu_dico[cpu] = 1
 
     res.nr_lineas = nr_linea
 
@@ -1006,7 +1025,7 @@ def report_info() :
     duracion_total = res.ts_last - res.ts_first
     print
     print "Fichero: %s   ts_init: %s,  ts_last: %s,  duracion (ms): %s,   nr_lineas: %d" % (
-          opt.filename, res.ts_first.to_str(), res.ts_last.to_str(), duracion_total.to_msg(), res.nr_lineas )
+          opt.filename, res.ts_first.to_sg_us_str(), res.ts_last.to_sg_us_str(), duracion_total.to_msg(), res.nr_lineas )
 
     print "CPUs totales: %d   PID totales: %d" % ( len(res.cpu_dico), len(res.lwp_dico) )
     print

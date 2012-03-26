@@ -2,19 +2,18 @@
 # -*- coding: utf-8 -*-
 
 import sys
+import os
 import argparse
 from timestamp import *
 
 # TODO:
 #
-# - Implementar el filtrado de PIDs
-# - Implementar el filtrado de CPUs
-# - Implementar el filtrado de tiempo (rel y abs)
-# - Implementar el filtrado de linea
-#
-# - Implementar funcionalidad info
-#
-# - Implementar autolanzado de trace-cmd report
+# - Ser mas verboso y contar lo que se esta haciendo
+# - Ver que se hace con --keep-text-file
+# - Mirar con más ejemplos (e.g. Manuel)
+# - Ver los errores de trace-cmd de Manuel
+# - Procesar sched_migrate_task ?
+# - Procesar sched_proccess_fork ?
 
 
 # Analizador de fragmentos de trace-cmd
@@ -324,7 +323,7 @@ def open_trace_file() :
     first_seven_bytes = first_twenty_bytes[0:7]
     
     
-    if first_three_bytes == '\x17\x08\x044' :
+    if first_three_bytes == '\x17\x08\x44' :
         # magic value of trace.dat file (see man trace-cmd-dat)
         glb.keep_text_file = opt.keep_text_file
         lanza_trace_cmd_report()
@@ -382,11 +381,22 @@ def abre_y_consume_header() :
 # --------------------------------------------------------------
 def lanza_trace_cmd_report():
     
-    print ('La conversion de trace.dat binario a trace_report texto no esta implementada todavia')
-    print ('Lance trace-cmd report -r <fichero.dat> para hacerlo usted mismo')
-    exit(-1)
-    
+    text_filename = "/tmp/%s-%d.txt" % (opt.filename, os.getpid() )
+    cmd = "trace-cmd report -r %s > %s " % (opt.filename, text_filename)
+
+    print "Ejecutando comando: %s ..." % cmd
+
+    status = os.system(cmd)
+
+    if status != 0 :
+        print "Error ejecutando trace-cmd"
+        exit(-1)
+
+    glb.report_filename = text_filename
+
     # TBC
+    # What to do with keep file??    
+
 
 #   BLOQUE-PROCESO-EJECUTANDO  [CPU] TIMESTAMP:  EVENTO:  PAR1=VAL1 PAR2=VAL2 PAR3=VAL3 ...
 def parsea_linea(linea, nr_linea) :

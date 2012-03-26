@@ -52,9 +52,7 @@ class res:
     lwp_dico = {}
     cpu_dico = {}
     ts_first = None # Timestamp absoluto
-    ts_first_str = ""
     ts_last = None # Timestamp absoluto
-    ts_last_str = ""
     nr_lineas = 0
 
 class glb:
@@ -431,9 +429,7 @@ def parsea_linea(linea, nr_linea) :
 
     if type(res.ts_first) == type(None) :
         res.ts_first = ts
-        res.ts_first_str = ts_str
         res.ts_last = ts
-        res.ts_last_str = ts_str
         
         if opt.from_abs :
             glb.filtros['from_abs'] = opt.from_abs - res.ts_first
@@ -855,7 +851,7 @@ def report_proceso():
     duracion_total = res.ts_last - res.ts_first
     print
     print "Fichero: %s   ts_init: %s,  ts_last: %s,  duracion (ms): %s  nr_lineas: %d" % (
-          opt.filename, res.ts_first_str, res.ts_last_str, duracion_total.to_msg(), res.nr_lineas )
+          opt.filename, res.ts_first.to_str(), res.ts_last.to_str(), duracion_total.to_msg(), res.nr_lineas )
 
     print "CPUs totales: %d   PID totales: %d" % ( len(res.cpu_dico), len(res.lwp_dico) )
 
@@ -881,10 +877,10 @@ def report_proceso():
             print " To_rel:  %s " % (glb.filtros['to_rel'].to_msg() ),
 
         if 'from_abs' in glb.filtros :
-            print " From_abs: %s (%s) " % (opt.from_abs, glb.filtros['from_abs'].to_msg() ),
+            print " From_abs: %s (%s) " % (opt.from_abs.to_str(), glb.filtros['from_abs'].to_msg() ),
         
         if 'to_abs' in glb.filtros :
-            print " To_abs:  %s (%s)" % (opt.to_abs, glb.filtros['to_rel'].to_msg() ),
+            print " To_abs:  %s (%s)" % (opt.to_abs.to_str(), glb.filtros['to_abs'].to_msg() ),
 
         if 'from_line' in glb.filtros :
             print " From_line: %d (%s)" % (glb.filtros['from_line'], glb.filtros['from_line_ts'].to_msg()),
@@ -1010,7 +1006,7 @@ def report_info() :
     duracion_total = res.ts_last - res.ts_first
     print
     print "Fichero: %s   ts_init: %s,  ts_last: %s,  duracion (ms): %s,   nr_lineas: %d" % (
-          opt.filename, res.ts_first_str, res.ts_last_str, duracion_total.to_msg(), res.nr_lineas )
+          opt.filename, res.ts_first.to_str(), res.ts_last.to_str(), duracion_total.to_msg(), res.nr_lineas )
 
     print "CPUs totales: %d   PID totales: %d" % ( len(res.cpu_dico), len(res.lwp_dico) )
     print

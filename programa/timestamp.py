@@ -46,6 +46,10 @@ class Timestamp:
             res = "%d.%03d" % (ms_int, ms_frac)
         return res
 
+    def to_sg_us_str(self) :
+        res = "%d.%d" % (self.sg, self.us)
+        return res
+    
     def to_us(self):
         return self.us + self.sg*1000000
 

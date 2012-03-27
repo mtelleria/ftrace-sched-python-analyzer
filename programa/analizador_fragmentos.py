@@ -8,12 +8,8 @@ from timestamp import *
 
 # TODO:
 #
-# - Ser mas verboso y contar lo que se esta haciendo
-# - Ver que se hace con --keep-text-file
 # - Mirar con más ejemplos (e.g. Manuel)
 # - Ver los errores de trace-cmd de Manuel
-# - Procesar sched_migrate_task ?
-# - Procesar sched_proccess_fork ?
 
 
 # Analizador de fragmentos de trace-cmd
@@ -50,6 +46,7 @@ from timestamp import *
 class res:
     lwp_dico = {}
     cpu_dico = {}
+    evento_dico = {}
     ts_first = None # Timestamp absoluto
     ts_last = None # Timestamp absoluto
     nr_lineas = 0
@@ -87,6 +84,7 @@ class glb:
     mode = "p" # p for process, i for info
     info_pids = False
     info_cpus = False
+    info_eventos = False
     nr_linea_inicial = 0
 
 class opt:
@@ -177,6 +175,9 @@ def main():
         info_fichero()
         report_info()
 
+    if not glb.keep_text_file :
+        print "Eliminando fichero de texto %s " % glb.report_filename
+        os.unlink(glb.report_filename)
 
 # ---------------------------------------------------------------
 #
@@ -193,9 +194,7 @@ def parsea_argv() :
                         type = int,
                         help = 'Granularidad en usec para unir bloques de ejecucion')
 
-    parser.add_argument('--file',
-                        default = 'trace.dat',
-                        help = 'Fichero a examinar.  Puede ser binario o texto, por defecto trace.dat')
+
     parser.add_argument('--keep-text',
                         action = 'store_true',
                         help = 'Mantener el fichero de texto autogenerado')
@@ -244,22 +243,25 @@ def parsea_argv() :
                         action = 'store_true',
                         help = 'Lista las CPUs que intervienen en la traza')
 
+    parser.add_argument('--info-eventos',
+                        action = 'store_true',
+                        help = 'Lista los eventos y los subsistemas presentes en el fichero de traza')
+
+    parser.add_argument('file',
+                        default = 'trace.dat',
+                        help = 'Fichero a examinar.  Puede ser binario o texto, por defecto trace.dat')
 
     args = parser.parse_args()
 
     opt.filename = args.file
 
-    # temporal fix until trace-cmd report is added
-    if opt.filename == "trace.dat" :
-        opt.filename = 'trace_cte_report.txt'
-
-
     opt.keep_text_file = args.keep_text
 
-    if args.info or args.info_pids or args.info_cpus :
+    if args.info or args.info_pids or args.info_cpus or args.info_eventos :
         glb.mode = "i"
         glb.info_pids = args.info_pids
         glb.info_cpus = args.info_cpus
+        glb.info_eventos = args.info_eventos
     else:
         glb.mode = "p"
         glb.granularity = Timestamp(0, args.gran)
@@ -381,10 +383,27 @@ def abre_y_consume_header() :
 # --------------------------------------------------------------
 def lanza_trace_cmd_report():
     
-    text_filename = "/tmp/%s-%d.txt" % (opt.filename, os.getpid() )
+    # Nos aseguramos que no machacamos un fichero existente
+    # Podria existir por casualidad
+    nombre_encontrado = False
+    incremento = 0
+    while not nombre_encontrado :
+#        text_filename = "/tmp/%s-%d.txt" % (os.path.basename(opt.filename), os.getpid() + incremento )
+        text_filename = "/tmp/%s-%d.txt" % (os.path.basename(opt.filename), 2681 + incremento )
+
+        try :
+            os.stat(text_filename)
+            incremento += 1
+        except OSError as exc :
+            if exc.errno == 2 :
+                nombre_encontrado = True
+            else :
+                # La excepcion viene por otra razon de fichero no existente
+                raise
+
     cmd = "trace-cmd report -r %s > %s " % (opt.filename, text_filename)
 
-    print "Ejecutando comando: %s ..." % cmd
+    print "Ejecutando comando: %s " % cmd
 
     status = os.system(cmd)
 
@@ -491,6 +510,7 @@ def parsea_linea(linea, nr_linea) :
 # -----------------------------------------------------------------
 def procesa_fichero():
 
+    print "Procesando fichero %s" % (glb.report_filename)
     nr_linea = glb.nr_linea_inicial
 
     # Bucle de lineas generales
@@ -1000,6 +1020,8 @@ def info_fichero() :
 
     nr_linea = glb.nr_linea_inicial
 
+    print "Escaneando fichero %s" % (glb.report_filename)
+
     # Bucle de lineas generales
     for linea in glb.report_file:
         nr_linea += 1
@@ -1011,17 +1033,25 @@ def info_fichero() :
 
         [basecmd, pid, cpu, ts_str, ts, evento, param] = res_parser
 
-        if glb.info_pids :
-            # Vemos si hay un nuevo PID
-            if pid not in res.lwp_dico :
-                lwp = Lwp_data()
-                lwp.pid = pid
-                lwp.basecmd = basecmd
-                res.lwp_dico[pid] = lwp
+#        if glb.info_pids :
+        # Vemos si hay un nuevo PID
+        # lo hacemos siempre para contar el numero de PIDs
+        if pid not in res.lwp_dico :
+            lwp = Lwp_data()
+            lwp.pid = pid
+            lwp.basecmd = basecmd
+            res.lwp_dico[pid] = lwp
             
-        if glb.info_cpus :
-            if cpu not in res.cpu_dico :
-                res.cpu_dico[cpu] = 1
+#        if glb.info_cpus :
+        # Lo hacemos siempre para contar el numero de CPU's   
+        if cpu not in res.cpu_dico :
+            res.cpu_dico[cpu] = 1
+
+        if glb.info_eventos :
+            if evento not in res.evento_dico :
+                res.evento_dico[evento] = 1
+            else :
+                res.evento_dico[evento] += 1
 
     res.nr_lineas = nr_linea
 
@@ -1041,7 +1071,6 @@ def report_info() :
     print
 
     if glb.info_pids :
-
         print "Lista de PIDs"
         print "-------------"
         n_cols = 3
@@ -1058,6 +1087,19 @@ def report_info() :
     if glb.info_cpus :
         print "Lista de CPUs: ",
         print sorted(res.cpu_dico.keys())
+
+    if glb.info_eventos :
+        print "Lista de eventos"
+        print "----------------"
+        curr_subsys = ''
+        for evento in sorted ( res.evento_dico.keys() ) :
+            [new_subsys, separador, resto] = evento.partition('_')
+            if curr_subsys != new_subsys :
+                curr_subsys = new_subsys
+                print "Subsistema %s : " % curr_subsys
+            
+            print "      %10s : %d " % (evento, res.evento_dico[evento] )
+
 
 
 # ----------------------------------------------------

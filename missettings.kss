@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<KernelShark><CaptureSettings><Events><CaptureType>Events</CaptureType><System>sched</System></Events><File>trace.dat</File></CaptureSettings></KernelShark>

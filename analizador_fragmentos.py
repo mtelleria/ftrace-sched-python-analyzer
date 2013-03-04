@@ -373,9 +373,9 @@ def abre_y_consume_header() :
 #
 # El fichero de texto se ha de generar de la forma
 #
-#      trace-cmd report -r -i <fichero.dat> > report.txt
+#      trace-cmd report -R -i <fichero.dat> > report.txt
 #
-# La opción -r deshabilita los "plugins" que por defecto formatean 
+# La opción -R deshabilita los "plugins" que por defecto formatean 
 # algunos eventos (ver el output de trace-cmd report -V).
 #
 # De esta forma todas las lineas tienen el mismo output
@@ -401,7 +401,7 @@ def lanza_trace_cmd_report():
                 # La excepcion viene por otra razon de fichero no existente
                 raise
 
-    cmd = "trace-cmd report -r %s > %s " % (opt.filename, text_filename)
+    cmd = "trace-cmd report -R %s > %s " % (opt.filename, text_filename)
 
     print "Ejecutando comando: %s " % cmd
 

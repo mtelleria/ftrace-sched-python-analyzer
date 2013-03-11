@@ -92,7 +92,7 @@ class opt:
     keep_text_file = True
     from_abs = ""
     to_abs = ""
-
+    output_csv = False
 
 
 class Muestra:
@@ -201,6 +201,11 @@ def parsea_argv() :
 
     parser.add_argument('--pids',
                         help = 'pid1,pid2,...,pidN:  Procesar unicamente los PIDs de la lista')
+
+    parser.add_argument('--output-csv',
+                        action = 'store_true',
+                        help = 'Tabla de salida en modo CSV con separador ;.')
+
     parser.add_argument('--process-idle',
                         action='store_true',
                         help = 'Procesa ademas las tareas swapper (idle) de cada CPU')
@@ -256,6 +261,7 @@ def parsea_argv() :
     opt.filename = args.file
 
     opt.keep_text_file = args.keep_text
+    opt.output_csv = args.output_csv
 
     if args.info or args.info_pids or args.info_cpus or args.info_eventos :
         glb.mode = "i"
@@ -940,6 +946,22 @@ def report_proceso():
 
     # Resultados por LWP
     # ------------------
+
+    format_string_cabecera = "%10s %10s %10s %10s %10s %10s %10s %10s %10s"
+    # ("n_frag", "start_ms", "durac_ms", "cpus", "hueco_ms", "periodo_ms", "separ_ms", "max_hueco_ms", "laten_ms")
+
+    format_string_datos =  "%10s %10s %10s %10s %10s %10s %10s %10s %10s" 
+    # (contador, comienzo_ms, duracion_ms, CPUs,   hueco_ms, periodo_ms, separacion_ms, max_hueco_ms, latencia_ms)
+
+
+    if opt.output_csv:
+        caracter_separador = ';'
+        fields = format_string_cabecera.split()
+        format_string_cabecera = caracter_separador.join(fields)
+
+        fields = format_string_datos.split()
+        format_string_datos = caracter_separador.join(fields)
+
     for pid in sorted (res.lwp_dico.keys()) :
         lwp = res.lwp_dico[pid]
 
@@ -948,8 +970,8 @@ def report_proceso():
         print "Estadisticas de PID %d basename %s" % (lwp.pid, lwp.basecmd)
         print "-----------------------------------------"
         print
-        print "%10s %10s %10s %10s %10s %10s %10s %10s %10s" % ("n_frag", "start_ms", "durac_ms", "cpus", 
-                                                           "hueco_ms", "periodo_ms", "separ_ms", "max_hueco_ms", "laten_ms")
+        print  format_string_cabecera % ("n_frag", "start_ms", "durac_ms", "cpus", 
+                                         "hueco_ms", "periodo_ms", "separ_ms", "max_hueco_ms", "laten_ms")
 
         # LWP que no han completado un fragmento son ignorados
         if len(lwp.fragmentos) == 0 :
@@ -968,9 +990,9 @@ def report_proceso():
             max_hueco_ms = fragmento.max_hueco.to_msg()
             latencia_ms = fragmento.latencia.to_msg()
             
-            print "%10s %10s %10s %10s %10s %10s %10s %10s %10s" % (contador, comienzo_ms, duracion_ms, CPUs,
-                                                               hueco_ms, periodo_ms, separacion_ms, 
-                                                               max_hueco_ms, latencia_ms)
+            print format_string_datos % (contador, comienzo_ms, duracion_ms, CPUs,
+                                         hueco_ms, periodo_ms, separacion_ms, 
+                                         max_hueco_ms, latencia_ms)
 
         # Datos del LWP por CPU
         for cpuid in res.cpu_dico.keys() :

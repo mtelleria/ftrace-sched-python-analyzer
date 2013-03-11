@@ -948,8 +948,8 @@ def report_proceso():
         print "Estadisticas de PID %d basename %s" % (lwp.pid, lwp.basecmd)
         print "-----------------------------------------"
         print
-        print "%10s %10s %10s %10s %10s %10s %10s %10s %10s" % ("N Frag", "Start_ms", "Durac_ms", "CPUs", 
-                                                           "Hueco_ms", "Periodo_ms", "Separ_ms", "Max_Hueco_ms", "Laten_ms")
+        print "%10s %10s %10s %10s %10s %10s %10s %10s %10s" % ("n_frag", "start_ms", "durac_ms", "cpus", 
+                                                           "hueco_ms", "periodo_ms", "separ_ms", "max_hueco_ms", "laten_ms")
 
         # LWP que no han completado un fragmento son ignorados
         if len(lwp.fragmentos) == 0 :
@@ -961,7 +961,7 @@ def report_proceso():
             contador += 1
             comienzo_ms = fragmento.comienzo.to_msg()
             duracion_ms = fragmento.duracion.to_msg()
-            CPUs = ' '.join( map(str, fragmento.cpus))
+            CPUs = '|'.join( map(str, fragmento.cpus))
             hueco_ms = fragmento.hueco.to_msg()
             periodo_ms = fragmento.periodo.to_msg()
             separacion_ms = fragmento.separacion.to_msg()

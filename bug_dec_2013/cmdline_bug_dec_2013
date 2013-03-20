@@ -1,0 +1,2 @@
+./analizador_fragmentos.py trace.txt --gran 20000
+

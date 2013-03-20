@@ -70,7 +70,7 @@ class glb:
 
     # Obtenido de trace-cmd --events | less (y buscando sched_switch)
     state_num_to_char = {"0x0":'R', "0x1":'S', "0x2":"D", "0x4":"T", "0x8":"t", "0x10":"Z", 
-                         "0x20":"X", "0x40":"x", "0x80":"W"}
+                         "0x20":"X", "0x40":"x", "0x80":"W", "0x82":"D|W"}
 
     # From cmdline
     report_filename = 'trace_cte_report.txt'
@@ -693,6 +693,22 @@ def procesa_sched_out(pid_saliente, muestra):
         lwp_saliente.pid = pid_saliente
         lwp_saliente.basecmd = muestra.param["prev_comm"]
         res.lwp_dico[pid_saliente] = lwp_saliente
+
+        # Le creamos un fragmento desde el comienzo de la traza hasta ahora
+        fragmento = Fragmento()
+        fragmento.comienzo = Timestamp(0,0)
+        
+        # Cuando la primera muestra es un sched_switch, con este procedimiento tendria
+        # duracion 0 lo que provocaria una posible division por cero en estadisticas.
+        #
+        # Para evitar este caso asignamos aqui una duracion minima de 1 us
+        if muestra.ts.sg == 0 and muestra.ts.us == 0:
+            fragmento.duracion = Timestamp(0,1)
+        else:
+            fragmento.duracion = muestra.ts
+        fragmento.cpus.append(muestra.cpu)
+        lwp_saliente.fragmentos.append(fragmento)
+        
 
     else:
         lwp_saliente = res.lwp_dico[pid_saliente]

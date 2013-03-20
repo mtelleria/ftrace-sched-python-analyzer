@@ -1,0 +1,310 @@
+version = 6
+cpus=2
+       trace-cmd-2746  [000]  1105.406629: sched_switch:          prev_comm=trace-cmd prev_pid=2746 prev_prio=120 prev_state=0x1 next_comm=gs next_pid=2744 next_prio=130
+           <...>-2744  [000]  1105.410054: sched_switch:          prev_comm=gs prev_pid=2744 prev_prio=130 prev_state=0x0 next_comm=trace-cmd next_pid=2749 next_prio=120
+       trace-cmd-2749  [000]  1105.410242: sched_wakeup:          comm=nautilus pid=2043 prio=120 success=1 cpu=1
+            java-2274  [001]  1105.410248: sched_wakeup:          comm=kernelshark pid=2732 prio=120 success=1 cpu=1
+       trace-cmd-2749  [000]  1105.410253: sched_wakeup:          comm=gnome-panel pid=2042 prio=120 success=1 cpu=0
+            java-2274  [001]  1105.410254: sched_switch:          prev_comm=java prev_pid=2274 prev_prio=120 prev_state=0x0 next_comm=nautilus next_pid=2043 next_prio=120
+       trace-cmd-2749  [000]  1105.410257: sched_switch:          prev_comm=trace-cmd prev_pid=2749 prev_prio=120 prev_state=0x0 next_comm=gnome-panel next_pid=2042 next_prio=120
+        nautilus-2043  [001]  1105.410367: sched_switch:          prev_comm=nautilus prev_pid=2043 prev_prio=120 prev_state=0x1 next_comm=kernelshark next_pid=2732 next_prio=120
+     gnome-panel-2042  [000]  1105.410371: sched_switch:          prev_comm=gnome-panel prev_pid=2042 prev_prio=120 prev_state=0x1 next_comm=trace-cmd next_pid=2749 next_prio=120
+       trace-cmd-2749  [000]  1105.410377: sched_wakeup:          comm=gnome-settings- pid=2035 prio=120 success=1 cpu=0
+       trace-cmd-2749  [000]  1105.410387: sched_switch:          prev_comm=trace-cmd prev_pid=2749 prev_prio=120 prev_state=0x0 next_comm=gnome-settings- next_pid=2035 next_prio=120
+ gnome-settings--2035  [000]  1105.410460: sched_switch:          prev_comm=gnome-settings- prev_pid=2035 prev_prio=120 prev_state=0x1 next_comm=trace-cmd next_pid=2749 next_prio=120
+           <...>-2732  [001]  1105.410527: sched_switch:          prev_comm=kernelshark prev_pid=2732 prev_prio=120 prev_state=0x40 next_comm=trace-cmd next_pid=2748 next_prio=120
+       trace-cmd-2749  [000]  1105.410752: sched_switch:          prev_comm=trace-cmd prev_pid=2749 prev_prio=120 prev_state=0x1 next_comm=gs next_pid=2744 next_prio=130
+       trace-cmd-2748  [001]  1105.410967: sched_switch:          prev_comm=trace-cmd prev_pid=2748 prev_prio=120 prev_state=0x1 next_comm=java next_pid=2274 next_prio=120
+            java-2274  [001]  1105.411535: sched_wakeup:          comm=eclipse pid=2261 prio=120 success=1 cpu=1
+            java-2274  [001]  1105.411540: sched_switch:          prev_comm=java prev_pid=2274 prev_prio=120 prev_state=0x0 next_comm=eclipse next_pid=2261 next_prio=120
+         eclipse-2261  [001]  1105.411698: sched_wakeup:          comm=eclipse pid=2178 prio=120 success=1 cpu=1
+         eclipse-2261  [001]  1105.411739: sched_switch:          prev_comm=eclipse prev_pid=2261 prev_prio=120 prev_state=0x1 next_comm=eclipse next_pid=2178 next_prio=120
+         eclipse-2178  [001]  1105.411755: sched_wakeup:          comm=eclipse pid=2650 prio=120 success=1 cpu=1
+         eclipse-2178  [001]  1105.411771: sched_switch:          prev_comm=eclipse prev_pid=2178 prev_prio=120 prev_state=0x1 next_comm=eclipse next_pid=2650 next_prio=120
+         eclipse-2650  [001]  1105.411788: sched_switch:          prev_comm=eclipse prev_pid=2650 prev_prio=120 prev_state=0x1 next_comm=java next_pid=2274 next_prio=120
+           <...>-2744  [000]  1105.411803: sched_wakeup:          comm=trace-cmd pid=2749 prio=120 success=1 cpu=0
+           <...>-2744  [000]  1105.411810: sched_switch:          prev_comm=gs prev_pid=2744 prev_prio=130 prev_state=0x0 next_comm=trace-cmd next_pid=2749 next_prio=120
+            java-2274  [001]  1105.411839: sched_switch:          prev_comm=java prev_pid=2274 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+       trace-cmd-2749  [000]  1105.411842: sched_switch:          prev_comm=trace-cmd prev_pid=2749 prev_prio=120 prev_state=0x1 next_comm=gs next_pid=2744 next_prio=130
+          <idle>-0     [001]  1105.412017: sched_wakeup:          comm=trace-cmd pid=2748 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.412021: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2748 next_prio=120
+       trace-cmd-2748  [001]  1105.412049: sched_switch:          prev_comm=trace-cmd prev_pid=2748 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.412785: sched_wakeup:          comm=eclipse pid=2261 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.412787: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=eclipse next_pid=2261 next_prio=120
+         eclipse-2261  [001]  1105.412843: sched_switch:          prev_comm=eclipse prev_pid=2261 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+           <...>-2744  [000]  1105.412892: sched_wakeup:          comm=trace-cmd pid=2749 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.412896: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2749 next_prio=120
+       trace-cmd-2749  [001]  1105.412908: sched_switch:          prev_comm=trace-cmd prev_pid=2749 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.413098: sched_wakeup:          comm=trace-cmd pid=2748 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.413100: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2748 next_prio=120
+       trace-cmd-2748  [001]  1105.413109: sched_switch:          prev_comm=trace-cmd prev_pid=2748 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.413957: sched_wakeup:          comm=trace-cmd pid=2749 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.413959: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2749 next_prio=120
+       trace-cmd-2749  [001]  1105.413969: sched_switch:          prev_comm=trace-cmd prev_pid=2749 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.414159: sched_wakeup:          comm=trace-cmd pid=2748 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.414162: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2748 next_prio=120
+       trace-cmd-2748  [001]  1105.414171: sched_switch:          prev_comm=trace-cmd prev_pid=2748 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.415018: sched_wakeup:          comm=trace-cmd pid=2749 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.415020: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2749 next_prio=120
+       trace-cmd-2749  [001]  1105.415030: sched_switch:          prev_comm=trace-cmd prev_pid=2749 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.415221: sched_wakeup:          comm=trace-cmd pid=2748 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.415223: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2748 next_prio=120
+       trace-cmd-2748  [001]  1105.415232: sched_switch:          prev_comm=trace-cmd prev_pid=2748 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.416079: sched_wakeup:          comm=trace-cmd pid=2749 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.416082: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2749 next_prio=120
+       trace-cmd-2749  [001]  1105.416091: sched_switch:          prev_comm=trace-cmd prev_pid=2749 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.416281: sched_wakeup:          comm=trace-cmd pid=2748 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.416284: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2748 next_prio=120
+       trace-cmd-2748  [001]  1105.416293: sched_switch:          prev_comm=trace-cmd prev_pid=2748 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.417140: sched_wakeup:          comm=trace-cmd pid=2749 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.417143: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2749 next_prio=120
+       trace-cmd-2749  [001]  1105.417152: sched_switch:          prev_comm=trace-cmd prev_pid=2749 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.417343: sched_wakeup:          comm=trace-cmd pid=2748 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.417345: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2748 next_prio=120
+       trace-cmd-2748  [001]  1105.417356: sched_switch:          prev_comm=trace-cmd prev_pid=2748 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.418202: sched_wakeup:          comm=trace-cmd pid=2749 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.418205: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2749 next_prio=120
+       trace-cmd-2749  [001]  1105.418216: sched_switch:          prev_comm=trace-cmd prev_pid=2749 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.418405: sched_wakeup:          comm=trace-cmd pid=2748 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.418407: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2748 next_prio=120
+       trace-cmd-2748  [001]  1105.418417: sched_switch:          prev_comm=trace-cmd prev_pid=2748 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.419265: sched_wakeup:          comm=trace-cmd pid=2749 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.419267: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2749 next_prio=120
+       trace-cmd-2749  [001]  1105.419277: sched_switch:          prev_comm=trace-cmd prev_pid=2749 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.419404: sched_wakeup:          comm=nautilus pid=2043 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.419408: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=nautilus next_pid=2043 next_prio=120
+           <...>-2744  [000]  1105.419410: sched_wakeup:          comm=gnome-panel pid=2042 prio=120 success=1 cpu=0
+           <...>-2744  [000]  1105.419415: sched_switch:          prev_comm=gs prev_pid=2744 prev_prio=130 prev_state=0x0 next_comm=gnome-panel next_pid=2042 next_prio=120
+        nautilus-2043  [001]  1105.419468: sched_wakeup:          comm=trace-cmd pid=2748 prio=120 success=1 cpu=1
+     gnome-panel-2042  [000]  1105.419502: sched_wakeup:          comm=gnome-settings- pid=2035 prio=120 success=1 cpu=0
+        nautilus-2043  [001]  1105.419603: sched_switch:          prev_comm=nautilus prev_pid=2043 prev_prio=120 prev_state=0x1 next_comm=trace-cmd next_pid=2748 next_prio=120
+       trace-cmd-2748  [001]  1105.419624: sched_switch:          prev_comm=trace-cmd prev_pid=2748 prev_prio=120 prev_state=0x1 next_comm=gnome-settings- next_pid=2035 next_prio=120
+     gnome-panel-2042  [000]  1105.419656: sched_switch:          prev_comm=gnome-panel prev_pid=2042 prev_prio=120 prev_state=0x1 next_comm=gs next_pid=2744 next_prio=130
+ gnome-settings--2035  [001]  1105.419778: sched_switch:          prev_comm=gnome-settings- prev_pid=2035 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.420328: sched_wakeup:          comm=trace-cmd pid=2749 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.420331: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2749 next_prio=120
+       trace-cmd-2749  [001]  1105.420343: sched_switch:          prev_comm=trace-cmd prev_pid=2749 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.420668: sched_wakeup:          comm=trace-cmd pid=2748 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.420671: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2748 next_prio=120
+       trace-cmd-2748  [001]  1105.420681: sched_switch:          prev_comm=trace-cmd prev_pid=2748 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.421336: sched_wakeup:          comm=java pid=2272 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.421339: sched_wakeup:          comm=eclipse pid=2126 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.421341: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=java next_pid=2272 next_prio=120
+            java-2272  [001]  1105.421365: sched_switch:          prev_comm=java prev_pid=2272 prev_prio=120 prev_state=0x1 next_comm=eclipse next_pid=2126 next_prio=120
+         eclipse-2126  [001]  1105.421386: sched_switch:          prev_comm=eclipse prev_pid=2126 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.421392: sched_wakeup:          comm=trace-cmd pid=2749 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.421395: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2749 next_prio=120
+       trace-cmd-2749  [001]  1105.421467: sched_switch:          prev_comm=trace-cmd prev_pid=2749 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.421730: sched_wakeup:          comm=trace-cmd pid=2748 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.421732: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2748 next_prio=120
+       trace-cmd-2748  [001]  1105.421743: sched_switch:          prev_comm=trace-cmd prev_pid=2748 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.422516: sched_wakeup:          comm=trace-cmd pid=2749 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.422519: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2749 next_prio=120
+       trace-cmd-2749  [001]  1105.422530: sched_switch:          prev_comm=trace-cmd prev_pid=2749 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.422793: sched_wakeup:          comm=trace-cmd pid=2748 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.422796: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2748 next_prio=120
+       trace-cmd-2748  [001]  1105.422807: sched_switch:          prev_comm=trace-cmd prev_pid=2748 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.423579: sched_wakeup:          comm=trace-cmd pid=2749 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.423582: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2749 next_prio=120
+       trace-cmd-2749  [001]  1105.423591: sched_switch:          prev_comm=trace-cmd prev_pid=2749 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.423855: sched_wakeup:          comm=trace-cmd pid=2748 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.423858: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2748 next_prio=120
+       trace-cmd-2748  [001]  1105.423867: sched_switch:          prev_comm=trace-cmd prev_pid=2748 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.424640: sched_wakeup:          comm=trace-cmd pid=2749 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.424642: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2749 next_prio=120
+       trace-cmd-2749  [001]  1105.424652: sched_switch:          prev_comm=trace-cmd prev_pid=2749 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.424916: sched_wakeup:          comm=trace-cmd pid=2748 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.424919: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2748 next_prio=120
+       trace-cmd-2748  [001]  1105.424928: sched_switch:          prev_comm=trace-cmd prev_pid=2748 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.425702: sched_wakeup:          comm=trace-cmd pid=2749 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.425705: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2749 next_prio=120
+       trace-cmd-2749  [001]  1105.425714: sched_switch:          prev_comm=trace-cmd prev_pid=2749 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.425977: sched_wakeup:          comm=trace-cmd pid=2748 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.425980: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2748 next_prio=120
+       trace-cmd-2748  [001]  1105.425989: sched_switch:          prev_comm=trace-cmd prev_pid=2748 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.426763: sched_wakeup:          comm=trace-cmd pid=2749 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.426766: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2749 next_prio=120
+       trace-cmd-2749  [001]  1105.426775: sched_switch:          prev_comm=trace-cmd prev_pid=2749 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.427038: sched_wakeup:          comm=trace-cmd pid=2748 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.427041: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2748 next_prio=120
+       trace-cmd-2748  [001]  1105.427050: sched_switch:          prev_comm=trace-cmd prev_pid=2748 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.427825: sched_wakeup:          comm=trace-cmd pid=2749 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.427827: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2749 next_prio=120
+       trace-cmd-2749  [001]  1105.427836: sched_switch:          prev_comm=trace-cmd prev_pid=2749 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.428099: sched_wakeup:          comm=trace-cmd pid=2748 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.428101: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2748 next_prio=120
+       trace-cmd-2748  [001]  1105.428110: sched_switch:          prev_comm=trace-cmd prev_pid=2748 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.428886: sched_wakeup:          comm=trace-cmd pid=2749 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.428888: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2749 next_prio=120
+       trace-cmd-2749  [001]  1105.428897: sched_switch:          prev_comm=trace-cmd prev_pid=2749 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.429160: sched_wakeup:          comm=trace-cmd pid=2748 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.429162: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2748 next_prio=120
+       trace-cmd-2748  [001]  1105.429171: sched_switch:          prev_comm=trace-cmd prev_pid=2748 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.429946: sched_wakeup:          comm=trace-cmd pid=2749 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.429949: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2749 next_prio=120
+       trace-cmd-2749  [001]  1105.429958: sched_switch:          prev_comm=trace-cmd prev_pid=2749 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.430222: sched_wakeup:          comm=trace-cmd pid=2748 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.430226: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2748 next_prio=120
+       trace-cmd-2748  [001]  1105.430237: sched_switch:          prev_comm=trace-cmd prev_pid=2748 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.431007: sched_wakeup:          comm=trace-cmd pid=2749 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.431010: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2749 next_prio=120
+       trace-cmd-2749  [001]  1105.431020: sched_switch:          prev_comm=trace-cmd prev_pid=2749 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.431286: sched_wakeup:          comm=trace-cmd pid=2748 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.431289: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2748 next_prio=120
+       trace-cmd-2748  [001]  1105.431298: sched_switch:          prev_comm=trace-cmd prev_pid=2748 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.432069: sched_wakeup:          comm=trace-cmd pid=2749 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.432071: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2749 next_prio=120
+       trace-cmd-2749  [001]  1105.432108: sched_switch:          prev_comm=trace-cmd prev_pid=2749 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.432347: sched_wakeup:          comm=trace-cmd pid=2748 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.432350: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2748 next_prio=120
+       trace-cmd-2748  [001]  1105.432359: sched_switch:          prev_comm=trace-cmd prev_pid=2748 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.433157: sched_wakeup:          comm=trace-cmd pid=2749 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.433159: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2749 next_prio=120
+       trace-cmd-2749  [001]  1105.433168: sched_switch:          prev_comm=trace-cmd prev_pid=2749 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.433409: sched_wakeup:          comm=trace-cmd pid=2748 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.433411: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2748 next_prio=120
+       trace-cmd-2748  [001]  1105.433420: sched_switch:          prev_comm=trace-cmd prev_pid=2748 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.434218: sched_wakeup:          comm=trace-cmd pid=2749 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.434220: sched_wakeup:          comm=java pid=2265 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.434223: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=java next_pid=2265 next_prio=120
+            java-2265  [001]  1105.434264: sched_switch:          prev_comm=java prev_pid=2265 prev_prio=120 prev_state=0x1 next_comm=trace-cmd next_pid=2749 next_prio=120
+       trace-cmd-2749  [001]  1105.434274: sched_switch:          prev_comm=trace-cmd prev_pid=2749 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.434470: sched_wakeup:          comm=trace-cmd pid=2748 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.434472: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2748 next_prio=120
+       trace-cmd-2748  [001]  1105.434481: sched_switch:          prev_comm=trace-cmd prev_pid=2748 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.435323: sched_wakeup:          comm=trace-cmd pid=2749 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.435325: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2749 next_prio=120
+       trace-cmd-2749  [001]  1105.435334: sched_switch:          prev_comm=trace-cmd prev_pid=2749 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.435530: sched_wakeup:          comm=trace-cmd pid=2748 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.435533: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2748 next_prio=120
+       trace-cmd-2748  [001]  1105.435542: sched_switch:          prev_comm=trace-cmd prev_pid=2748 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.436384: sched_wakeup:          comm=trace-cmd pid=2749 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.436386: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2749 next_prio=120
+       trace-cmd-2749  [001]  1105.436395: sched_switch:          prev_comm=trace-cmd prev_pid=2749 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.436591: sched_wakeup:          comm=trace-cmd pid=2748 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.436594: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2748 next_prio=120
+       trace-cmd-2748  [001]  1105.436603: sched_switch:          prev_comm=trace-cmd prev_pid=2748 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.437445: sched_wakeup:          comm=trace-cmd pid=2749 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.437447: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2749 next_prio=120
+       trace-cmd-2749  [001]  1105.437456: sched_switch:          prev_comm=trace-cmd prev_pid=2749 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.437652: sched_wakeup:          comm=trace-cmd pid=2748 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.437654: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2748 next_prio=120
+       trace-cmd-2748  [001]  1105.437663: sched_switch:          prev_comm=trace-cmd prev_pid=2748 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.438507: sched_wakeup:          comm=trace-cmd pid=2749 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.438510: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2749 next_prio=120
+       trace-cmd-2749  [001]  1105.438522: sched_switch:          prev_comm=trace-cmd prev_pid=2749 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.438713: sched_wakeup:          comm=trace-cmd pid=2748 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.438715: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2748 next_prio=120
+       trace-cmd-2748  [001]  1105.438724: sched_switch:          prev_comm=trace-cmd prev_pid=2748 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.439570: sched_wakeup:          comm=trace-cmd pid=2749 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.439572: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2749 next_prio=120
+       trace-cmd-2749  [001]  1105.439582: sched_switch:          prev_comm=trace-cmd prev_pid=2749 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.439774: sched_wakeup:          comm=trace-cmd pid=2748 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.439777: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2748 next_prio=120
+       trace-cmd-2748  [001]  1105.439786: sched_switch:          prev_comm=trace-cmd prev_pid=2748 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.440631: sched_wakeup:          comm=trace-cmd pid=2749 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.440634: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2749 next_prio=120
+       trace-cmd-2749  [001]  1105.440644: sched_switch:          prev_comm=trace-cmd prev_pid=2749 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.440836: sched_wakeup:          comm=trace-cmd pid=2748 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.440838: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2748 next_prio=120
+       trace-cmd-2748  [001]  1105.440847: sched_switch:          prev_comm=trace-cmd prev_pid=2748 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.441692: sched_wakeup:          comm=trace-cmd pid=2749 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.441695: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2749 next_prio=120
+       trace-cmd-2749  [001]  1105.441704: sched_switch:          prev_comm=trace-cmd prev_pid=2749 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.441897: sched_wakeup:          comm=trace-cmd pid=2748 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.441899: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2748 next_prio=120
+       trace-cmd-2748  [001]  1105.441908: sched_switch:          prev_comm=trace-cmd prev_pid=2748 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.442037: sched_wakeup:          comm=ksoftirqd/1 pid=7 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.442040: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=ksoftirqd/1 next_pid=7 next_prio=120
+     ksoftirqd/1-7     [001]  1105.442057: sched_switch:          prev_comm=ksoftirqd/1 prev_pid=7 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.442753: sched_wakeup:          comm=trace-cmd pid=2749 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.442756: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2749 next_prio=120
+       trace-cmd-2749  [001]  1105.442797: sched_switch:          prev_comm=trace-cmd prev_pid=2749 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.442958: sched_wakeup:          comm=trace-cmd pid=2748 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.442960: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2748 next_prio=120
+       trace-cmd-2748  [001]  1105.442970: sched_switch:          prev_comm=trace-cmd prev_pid=2748 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.443845: sched_wakeup:          comm=trace-cmd pid=2749 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.443847: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2749 next_prio=120
+       trace-cmd-2749  [001]  1105.443857: sched_switch:          prev_comm=trace-cmd prev_pid=2749 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.444019: sched_wakeup:          comm=trace-cmd pid=2748 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.444021: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2748 next_prio=120
+       trace-cmd-2748  [001]  1105.444030: sched_switch:          prev_comm=trace-cmd prev_pid=2748 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.444906: sched_wakeup:          comm=trace-cmd pid=2749 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.444908: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2749 next_prio=120
+       trace-cmd-2749  [001]  1105.444918: sched_switch:          prev_comm=trace-cmd prev_pid=2749 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.445079: sched_wakeup:          comm=trace-cmd pid=2748 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.445082: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2748 next_prio=120
+       trace-cmd-2748  [001]  1105.445091: sched_switch:          prev_comm=trace-cmd prev_pid=2748 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.445968: sched_wakeup:          comm=trace-cmd pid=2749 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.445971: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2749 next_prio=120
+       trace-cmd-2749  [001]  1105.445982: sched_switch:          prev_comm=trace-cmd prev_pid=2749 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.446140: sched_wakeup:          comm=trace-cmd pid=2748 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.446143: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2748 next_prio=120
+       trace-cmd-2748  [001]  1105.446153: sched_switch:          prev_comm=trace-cmd prev_pid=2748 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.447030: sched_wakeup:          comm=trace-cmd pid=2749 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.447033: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2749 next_prio=120
+       trace-cmd-2749  [001]  1105.447042: sched_switch:          prev_comm=trace-cmd prev_pid=2749 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.447201: sched_wakeup:          comm=trace-cmd pid=2748 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.447204: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2748 next_prio=120
+       trace-cmd-2748  [001]  1105.447213: sched_switch:          prev_comm=trace-cmd prev_pid=2748 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.448091: sched_wakeup:          comm=trace-cmd pid=2749 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.448094: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2749 next_prio=120
+       trace-cmd-2749  [001]  1105.448103: sched_switch:          prev_comm=trace-cmd prev_pid=2749 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.448262: sched_wakeup:          comm=trace-cmd pid=2748 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.448265: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2748 next_prio=120
+       trace-cmd-2748  [001]  1105.448274: sched_switch:          prev_comm=trace-cmd prev_pid=2748 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.449152: sched_wakeup:          comm=trace-cmd pid=2749 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.449154: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2749 next_prio=120
+       trace-cmd-2749  [001]  1105.449163: sched_switch:          prev_comm=trace-cmd prev_pid=2749 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.449323: sched_wakeup:          comm=trace-cmd pid=2748 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.449326: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2748 next_prio=120
+       trace-cmd-2748  [001]  1105.449335: sched_switch:          prev_comm=trace-cmd prev_pid=2748 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.450213: sched_wakeup:          comm=trace-cmd pid=2749 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.450215: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2749 next_prio=120
+       trace-cmd-2749  [001]  1105.450225: sched_switch:          prev_comm=trace-cmd prev_pid=2749 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.450384: sched_wakeup:          comm=trace-cmd pid=2748 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.450387: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2748 next_prio=120
+       trace-cmd-2748  [001]  1105.450396: sched_switch:          prev_comm=trace-cmd prev_pid=2748 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.451274: sched_wakeup:          comm=trace-cmd pid=2749 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.451276: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2749 next_prio=120
+       trace-cmd-2749  [001]  1105.451286: sched_switch:          prev_comm=trace-cmd prev_pid=2749 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.451445: sched_wakeup:          comm=trace-cmd pid=2748 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.451447: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2748 next_prio=120
+       trace-cmd-2748  [001]  1105.451457: sched_switch:          prev_comm=trace-cmd prev_pid=2748 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.452335: sched_wakeup:          comm=trace-cmd pid=2749 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.452338: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2749 next_prio=120
+       trace-cmd-2749  [001]  1105.452347: sched_switch:          prev_comm=trace-cmd prev_pid=2749 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.452506: sched_wakeup:          comm=trace-cmd pid=2748 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.452508: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2748 next_prio=120
+       trace-cmd-2748  [001]  1105.452518: sched_switch:          prev_comm=trace-cmd prev_pid=2748 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.453397: sched_wakeup:          comm=trace-cmd pid=2749 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.453400: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2749 next_prio=120
+       trace-cmd-2749  [001]  1105.453411: sched_switch:          prev_comm=trace-cmd prev_pid=2749 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.453567: sched_wakeup:          comm=trace-cmd pid=2748 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.453570: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2748 next_prio=120
+       trace-cmd-2748  [001]  1105.453579: sched_switch:          prev_comm=trace-cmd prev_pid=2748 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.454459: sched_wakeup:          comm=trace-cmd pid=2749 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.454462: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2749 next_prio=120
+       trace-cmd-2749  [001]  1105.454498: sched_switch:          prev_comm=trace-cmd prev_pid=2749 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.454628: sched_wakeup:          comm=trace-cmd pid=2748 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.454631: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2748 next_prio=120
+       trace-cmd-2748  [001]  1105.454641: sched_switch:          prev_comm=trace-cmd prev_pid=2748 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.455546: sched_wakeup:          comm=trace-cmd pid=2749 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.455549: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2749 next_prio=120
+       trace-cmd-2749  [001]  1105.455558: sched_switch:          prev_comm=trace-cmd prev_pid=2749 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.455690: sched_wakeup:          comm=trace-cmd pid=2748 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.455693: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2748 next_prio=120
+       trace-cmd-2748  [001]  1105.455702: sched_switch:          prev_comm=trace-cmd prev_pid=2748 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.456607: sched_wakeup:          comm=trace-cmd pid=2749 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.456610: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2749 next_prio=120
+       trace-cmd-2749  [001]  1105.456618: sched_switch:          prev_comm=trace-cmd prev_pid=2749 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.456751: sched_wakeup:          comm=trace-cmd pid=2748 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.456753: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2748 next_prio=120
+       trace-cmd-2748  [001]  1105.456763: sched_switch:          prev_comm=trace-cmd prev_pid=2748 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.457668: sched_wakeup:          comm=trace-cmd pid=2749 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.457671: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2749 next_prio=120
+       trace-cmd-2749  [001]  1105.457680: sched_switch:          prev_comm=trace-cmd prev_pid=2749 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.457812: sched_wakeup:          comm=trace-cmd pid=2748 prio=120 success=1 cpu=1
+          <idle>-0     [001]  1105.457814: sched_switch:          prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=0x0 next_comm=trace-cmd next_pid=2748 next_prio=120
+       trace-cmd-2748  [001]  1105.457824: sched_switch:          prev_comm=trace-cmd prev_pid=2748 prev_prio=120 prev_state=0x1 next_comm=swapper next_pid=0 next_prio=120
+          <idle>-0     [001]  1105.458729: sched_wakeup:          comm=trace-cmd pid=2749 prio=120 success=1 cpu=1

@@ -1,0 +1,17 @@
+ORIGEN:
+
+Cuando la tarea que ejecuta al comienzo de la traza experimenta un
+hueco (vacio < granularidad) justo después del primer sched_out, el
+sched_in no dispone de un fragmento creado sobre el que trabajar.
+
+SOLUCION:
+
+Para el caso de las tareas que ejecutan al comienzo de la traza (y que
+por tanto empiezan con un sched_out), se crea un fragmento inicial
+en dicho sched_out con:
+
+-  duracion:  el ts (relativo) o 1us si el ts fuese 0 (para evitar
+   zero division).
+-  comienzo: 0
+-  periodo, separacion:  0
+

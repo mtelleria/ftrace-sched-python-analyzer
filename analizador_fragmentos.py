@@ -60,7 +60,7 @@ class glb:
     discarded_events += ['sched_kthread_stop', 'sched_process_exit', 'sched_process_free',
                          'sched_process_fork', 'sched_wakeup_new', 'sched_wait_task',
                          'sched_process_wait', 'sched_kthread_stop_ret', 'sched_stat_wait',
-                         'sched_stat_sleep', 'sched_stat_iowait']
+                         'sched_stat_sleep', 'sched_stat_iowait', 'sched_signal_send']
 
     # Estos son los eventos procesados
     processed_events = ['sched_switch', 'sched_wakeup', 'sched_migrate_task', ]

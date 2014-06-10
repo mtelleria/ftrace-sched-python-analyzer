@@ -13,7 +13,7 @@ setup(
     license = "GPLv3",
     description = "Program to parse FTRACE output and obtain execution fragments",
     long_description = long_description,
-    py_modules=["timestamp"],
+    py_modules=["ftrace_frag", "timestamp"],
     package_dir = {"":"src"},
     classifiers = ["Development Status :: 3 - Alpha",
                    "License :: OSI Approved :: GPLv3",

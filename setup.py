@@ -18,5 +18,6 @@ setup(
     classifiers = ["Development Status :: 3 - Alpha",
                    "License :: OSI Approved :: GPLv3",
                    "Programming Language :: Python",
-                  "Programming Language :: Python :: 2.7"]
+                  "Programming Language :: Python :: 2.7"],
+    entry_points = {"console-scripts": ["ftrace_frag = ftrace_frag:main"]}
     )

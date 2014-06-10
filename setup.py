@@ -19,5 +19,5 @@ setup(
                    "License :: OSI Approved :: GPLv3",
                    "Programming Language :: Python",
                   "Programming Language :: Python :: 2.7"],
-    entry_points = {"console-scripts": ["ftrace_frag = ftrace_frag:main"]}
+    entry_points = {"console_scripts": ["ftrace_frag = ftrace_frag:main"]}
     )
